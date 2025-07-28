@@ -178,7 +178,8 @@ def api_verify_password():
 
 # ==============================================================================
 # FONCTION CORRIGÉE POUR LE GRAPHIQUE
-# ==============================================================================
+# ==============================================================================# Dans app.py, remplacez SEULEMENT la fonction chart_data
+
 @app.route('/api/chart_data/<int:objectif_id>')
 def chart_data(objectif_id):
     conn = get_db_connection()
@@ -201,12 +202,16 @@ def chart_data(objectif_id):
         else:
             montant_cumulatif_sorties += trans['montant']
 
-        # Correction pour être plus robuste avec les formats de date
-        date_part = trans['date'].split(' ')[0] # On prend seulement 'YYYY-MM-DD'
+        # --- LIGNE CORRIGÉE ---
+        # Au lieu de planter sur un format de date inattendu, on est plus flexible.
+        # On prend juste la partie "jour" de la date (ex: '2025-07-29')
+        # et on la reformate manuellement. C'est beaucoup plus robuste.
+        date_part = trans['date'].split(' ')[0] # -> '2025-07-29'
         try:
             year, month, day = date_part.split('-')
             formatted_date = f"{day}/{month}/{year}"
         except ValueError:
+            # Si le format est vraiment étrange, on met une date générique
             formatted_date = "Date Inconnue"
 
         labels.append(formatted_date)
@@ -218,8 +223,3 @@ def chart_data(objectif_id):
         'data_entrees': data_entrees,
         'data_sorties': data_sorties
     })
-# ==============================================================================
-
-# --- Point de démarrage ---
-if __name__ == '__main__':
-    app.run(debug=True)
