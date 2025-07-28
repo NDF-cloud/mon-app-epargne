@@ -1,0 +1,9 @@
+# Environnement virtuel
+venv/
+
+# Fichiers cache de Python
+__pycache__/
+*.pyc
+
+# Fichiers de base de données (si vous ne voulez pas les envoyer)
+*.db

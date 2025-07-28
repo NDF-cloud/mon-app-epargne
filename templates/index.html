@@ -1,0 +1,133 @@
+<!-- FICHIER COMPLET POUR : templates/index.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Objectifs d'Épargne</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        .container { width: 100%; max-width: 700px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #005f73; margin: 0; }
+        .header-buttons a { text-decoration: none; color: white; padding: 10px 15px; border-radius: 50%; font-size: 1.5em; line-height: 1; margin-left: 10px; }
+        .add-btn { background-color: #006d77; }
+        .settings-btn { background-color: #6c757d; font-size: 1.2em; padding: 12px; }
+        .total-container { background-color: #fff; margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+        .total-solde { font-size: 1.5em; font-weight: bold; color: #005f73; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        #toggle-solde { background: none; border: none; font-size: 1.2em; cursor: pointer; }
+        .objectifs-list { list-style-type: none; padding: 0; margin-top: 20px; }
+        .objectif-item { display:flex; justify-content: space-between; align-items: center; background-color: #fff; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .objectif-item a.main-link { flex-grow: 1; display: block; padding: 20px; text-decoration: none; color: inherit; }
+        .objectif-header { display: flex; justify-content: space-between; align-items: center; }
+        .objectif-nom { font-weight: bold; font-size: 1.2em; color: #0a9396; }
+        .objectif-progression-text { font-size: 1.1em; font-weight: bold; }
+        .progress-container { width: 100%; background-color: #e9ecef; border-radius: 8px; margin-top: 12px; height: 12px; overflow: hidden; }
+        .progress-bar { background-color: #94d2bd; height: 100%; border-radius: 8px; }
+        .objectif-actions { padding: 0 20px 0 0; }
+        .objectif-actions button { background: none; border: none; color: #e63946; cursor: pointer; text-decoration: underline; font-size: 1em; }
+        .flash-messages { margin: 15px 0; text-align: center; }
+        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
+        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .dark-mode .header, .dark-mode .total-container, .dark-mode .objectif-item { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .dark-mode h1, .dark-mode .total-solde { color: #76c7c0; }
+        .dark-mode .objectif-nom { color: #80cbc4; }
+        .dark-mode .progress-container { background-color: #424242; }
+    </style>
+</head>
+<body>
+    <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
+    <div class="container">
+        <div class="header">
+            <h1>Mes Objectifs</h1>
+            <div class="header-buttons">
+                <a href="{{ url_for('parametres') }}" class="settings-btn" title="Paramètres">⚙</a>
+                <a href="{{ url_for('formulaire_objectif') }}" class="add-btn" title="Ajouter un objectif">+</a>
+            </div>
+        </div>
+        <div class="total-container">
+            <h3>Épargne Totale</h3>
+            <div class="total-solde">
+                <span id="solde-masque">****** XAF</span>
+                <span id="solde-reel" style="display:none;">{{ "%.2f"|format(total_epargne) }} XAF</span>
+                <button id="toggle-solde" title="Afficher/Cacher le solde"></button>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="archives-link" style="text-align: center; margin: 20px 0;">
+            <a href="{{ url_for('archives') }}">Voir mes objectifs terminés (Archives)</a>
+        </div>
+
+        <ul class="objectifs-list">
+            {% for obj in objectifs %}
+            <li class="objectif-item">
+                <a href="{{ url_for('objectif_detail', objectif_id=obj.id) }}" class="main-link">
+                    <div class="objectif-header">
+                        <span class="objectif-nom">{{ obj.nom }}</span>
+                        <span class="objectif-progression-text">{{ "%.1f"|format(obj.progression) }}%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ obj.progression }}%;"></div>
+                    </div>
+                </a>
+                <div class="objectif-actions">
+                    <form id="form-delete-{{ obj.id }}" action="{{ url_for('supprimer_objectif', objectif_id=obj.id) }}" method="post">
+                        <input type="hidden" name="password">
+                        <button type="button" onclick="confirmerSuppression({{ obj.id }})">Supprimer</button>
+                    </form>
+                </div>
+            </li>
+            {% else %}
+            <li class="objectif-item" style="display:block; text-align:center; padding: 20px;">Aucun objectif actif. Cliquez sur le '+' pour commencer !</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        document.getElementById('toggle-solde').addEventListener('click', () => {
+            const soldeReel = document.getElementById('solde-reel');
+            const soldeMasque = document.getElementById('solde-masque');
+            if (soldeReel.style.display === 'inline') {
+                soldeReel.style.display = 'none';
+                soldeMasque.style.display = 'inline';
+                return;
+            }
+            const password = prompt("Veuillez entrer le mot de passe pour afficher le solde :");
+            if (password !== null) {
+                fetch('/api/verify_password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        soldeMasque.style.display = 'none';
+                        soldeReel.style.display = 'inline';
+                    } else { alert('Mot de passe incorrect !'); }
+                });
+            }
+        });
+        function confirmerSuppression(objectifId) {
+            const confirmation = confirm("Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cet objectif ?");
+            if (confirmation) {
+                const password = prompt("Pour confirmer, veuillez entrer votre mot de passe :");
+                if (password !== null) {
+                    const form = document.getElementById('form-delete-' + objectifId);
+                    form.querySelector('input[name="password"]').value = password;
+                    form.submit();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

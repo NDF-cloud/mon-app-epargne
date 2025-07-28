@@ -1,0 +1,85 @@
+<!-- FICHIER COMPLET POUR : templates/archives.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Succès - Objectifs Archivés</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        .container { width: 100%; max-width: 700px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #005f73; margin: 0; }
+        .trophy { font-size: 1.5em; margin-right: 10px; }
+        .objectifs-list { list-style-type: none; padding: 0; margin-top: 20px; }
+        .objectif-item { display: flex; justify-content: space-between; align-items: center; background-color: #fff; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 20px; }
+        .objectif-item.archived { border-left: 5px solid #ffd700; }
+        .objectif-info { flex-grow: 1; }
+        .objectif-header { display: flex; justify-content: space-between; align-items: center; }
+        .objectif-nom { font-weight: bold; font-size: 1.2em; }
+        .objectif-footer { margin-top: 10px; font-size: 0.9em; color: #555; }
+        .objectif-actions button { background: none; border: none; color: #e63946; cursor: pointer; text-decoration: underline; font-size: 1em; padding: 5px; }
+        .flash-messages { margin: 15px 0; text-align: center; }
+        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
+        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .dark-mode .header, .dark-mode .objectif-item { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .dark-mode h1 { color: #76c7c0; }
+        .dark-mode .objectif-footer { color: #aaa; }
+    </style>
+</head>
+<body>
+    <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
+    <div class="container">
+        <a href="{{ url_for('index') }}">← Retour aux objectifs actifs</a>
+        <div class="header" style="margin-top: 20px;">
+            <h1><span class="trophy"></span> Mes Succès</h1>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <ul class="objectifs-list">
+            {% for obj in objectifs %}
+            <li class="objectif-item archived">
+                <div class="objectif-info">
+                    <div class="objectif-header">
+                        <span class="objectif-nom">{{ obj.nom }}</span>
+                    </div>
+                    <div class="objectif-footer">
+                        <span>Montant final : {{ "%.0f"|format(obj.montant_cible) }} XAF</span>
+                    </div>
+                </div>
+                <div class="objectif-actions">
+                    <form id="form-delete-{{ obj.id }}" action="{{ url_for('supprimer_objectif', objectif_id=obj.id) }}" method="post">
+                        <input type="hidden" name="password">
+                        <button type="button" onclick="confirmerSuppression({{ obj.id }})">Supprimer</button>
+                    </form>
+                </div>
+            </li>
+            {% else %}
+            <li class="objectif-item" style="display:block; text-align:center; padding: 20px;">Aucun objectif n'a encore été archivé.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        function confirmerSuppression(objectifId) {
+            const confirmation = confirm("Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cet objectif ?");
+            if (confirmation) {
+                const password = prompt("Pour confirmer, veuillez entrer votre mot de passe :");
+                if (password !== null) {
+                    const form = document.getElementById('form-delete-' + objectifId);
+                    form.querySelector('input[name="password"]').value = password;
+                    form.submit();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!-- ============================================================================== -->
+<!-- FICHIER COMPLET ET FINAL POUR : templates/formulaire_objectif.html           -->
+<!-- (Corrige le bug 'KeyError: 'nom'')                                            -->
+<!-- ============================================================================== -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if objectif %}Modifier l'objectif{% else %}Créer un nouvel objectif{% endif %}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        .container { width: 100%; max-width: 600px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 30px; }
+        h1 { color: #005f73; }
+        form div { margin-bottom: 15px; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
+        form button { background-color: #006d77; color: white; cursor: pointer; border: none; padding: 12px 20px; font-size: 1.1em; border-radius: 5px; width: 100%; margin-top: 10px; }
+        .password-field { border-top: 1px solid #eee; padding-top: 15px; margin-top: 20px; }
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .dark-mode .container { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .dark-mode h1 { color: #76c7c0; }
+    </style>
+</head>
+<body>
+    <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
+
+    <div class="container">
+        <a href="{{ url_for('index') }}">← Retour à l'accueil</a>
+        <h1>{% if objectif %}Modifier l'objectif{% else %}Créer un nouvel objectif{% endif %}</h1>
+
+        <form action="{{ url_for('sauvegarder_objectif', objectif_id=objectif.id if objectif else None) }}" method="post">
+
+            <!-- C'est ce champ qui manquait probablement -->
+            <div>
+                <label for="nom">Nom de l'objectif</label>
+                <input type="text" id="nom" name="nom" placeholder="Ex: Vacances au Sénégal" value="{{ objectif.nom if objectif }}" required>
+            </div>
+
+            <div>
+                <label for="montant_cible">Montant cible (XAF)</label>
+                <input type="number" id="montant_cible" name="montant_cible" placeholder="Ex: 500000" value="{{ objectif.montant_cible if objectif }}" required>
+            </div>
+
+            <div>
+                <label for="date_limite">Date limite</label>
+                <input type="date" id="date_limite" name="date_limite" value="{{ objectif.date_limite if objectif }}">
+            </div>
+
+            <div class="password-field">
+                <label for="password">Mot de passe de confirmation</label>
+                <input type="password" id="password" name="password" required placeholder="Mot de passe requis pour sauvegarder">
+            </div>
+
+            <button type="submit">Sauvegarder</button>
+        </form>
+    </div>
+</body>
+</html>
