@@ -1,6 +1,6 @@
 # ==============================================================================
-# FICHIER FINAL ET CORRIGÉ POUR : app.py
-# (Corrige le bug 'NameError: name 'obj' is not defined')
+# FICHIER COMPLET, FINAL ET CORRIGÉ POUR : app.py
+# (Inclut la correction pour le graphique sur Render)
 # ==============================================================================
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
@@ -51,7 +51,7 @@ def archives():
     conn.close()
     return render_template('archives.html', objectifs=objectifs_archives)
 
-# --- Route de gestion des objectifs ---
+# --- Routes de gestion des objectifs ---
 @app.route('/objectif/<int:objectif_id>')
 def objectif_detail(objectif_id):
     conn = get_db_connection()
@@ -65,7 +65,6 @@ def objectif_detail(objectif_id):
     montant_restant = objectif['montant_cible'] - objectif['montant_actuel']
     rythme_quotidien = 0
 
-    # LIGNE CORRIGÉE : On utilise 'objectif' au lieu de 'obj'
     if objectif['montant_cible'] > 0:
         progression = (objectif['montant_actuel'] / objectif['montant_cible']) * 100
 
@@ -177,21 +176,49 @@ def api_verify_password():
     if mdp_actuel is None: return jsonify({'success': True})
     return jsonify({'success': (mdp_saisi == mdp_actuel)})
 
+# ==============================================================================
+# FONCTION CORRIGÉE POUR LE GRAPHIQUE
+# ==============================================================================
 @app.route('/api/chart_data/<int:objectif_id>')
 def chart_data(objectif_id):
     conn = get_db_connection()
-    transactions = conn.execute('SELECT montant, type_transaction, date FROM transactions WHERE objectif_id = ? ORDER BY date ASC', (objectif_id,)).fetchall()
+    transactions = conn.execute(
+        'SELECT montant, type_transaction, date FROM transactions WHERE objectif_id = ? ORDER BY date ASC',
+        (objectif_id,)
+    ).fetchall()
     conn.close()
-    labels, data_entrees, data_sorties = ["Départ"], [0], [0]
-    montant_cumulatif_entrees, montant_cumulatif_sorties = 0, 0
+
+    labels = ["Départ"]
+    data_entrees = [0]
+    data_sorties = [0]
+
+    montant_cumulatif_entrees = 0
+    montant_cumulatif_sorties = 0
+
     for trans in transactions:
-        if trans['type_transaction'] == 'entree': montant_cumulatif_entrees += trans['montant']
-        else: montant_cumulatif_sorties += trans['montant']
-        date_obj = datetime.strptime(trans['date'], '%Y-%m-%d %H:%M:%S')
-        labels.append(date_obj.strftime('%d/%m/%Y'))
+        if trans['type_transaction'] == 'entree':
+            montant_cumulatif_entrees += trans['montant']
+        else:
+            montant_cumulatif_sorties += trans['montant']
+
+        # Correction pour être plus robuste avec les formats de date
+        date_part = trans['date'].split(' ')[0] # On prend seulement 'YYYY-MM-DD'
+        try:
+            year, month, day = date_part.split('-')
+            formatted_date = f"{day}/{month}/{year}"
+        except ValueError:
+            formatted_date = "Date Inconnue"
+
+        labels.append(formatted_date)
         data_entrees.append(montant_cumulatif_entrees)
         data_sorties.append(montant_cumulatif_sorties)
-    return jsonify({'labels': labels, 'data_entrees': data_entrees, 'data_sorties': data_sorties})
+
+    return jsonify({
+        'labels': labels,
+        'data_entrees': data_entrees,
+        'data_sorties': data_sorties
+    })
+# ==============================================================================
 
 # --- Point de démarrage ---
 if __name__ == '__main__':
