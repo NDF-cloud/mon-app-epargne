@@ -34,6 +34,7 @@
             </div>
           {% endif %}
         {% endwith %}
+        <!-- LA LIGNE CLÉ CORRIGÉE ICI -->
         <form action="{% if objectif %}{{ url_for('sauvegarder_objectif_existing', objectif_id=objectif.id) }}{% else %}{{ url_for('sauvegarder_objectif_new') }}{% endif %}" method="post">
             <div>
                 <label for="nom">Nom de l'objectif</label>

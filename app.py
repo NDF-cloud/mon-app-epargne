@@ -1,6 +1,6 @@
 # ==============================================================================
-# FICHIER FINAL, COMPLET ET CORRIGÉ : app.py
-# (Intègre toutes les fonctionnalités et corrige le 'NameError: login_required')
+# FICHIER FINAL, ULTIME ET CORRIGÉ : app.py
+# (Ajoute la route manquante pour sauvegarder_objectif_existing)
 # ==============================================================================
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 import sqlite3
@@ -17,7 +17,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# --- DÉCORATEUR DE SÉCURITÉ CORRIGÉ ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -90,7 +89,7 @@ def logout():
     flash('Vous avez été déconnecté avec succès.', 'success')
     return redirect(url_for('login'))
 
-# --- ROUTES DE L'APPLICATION (TOUTES SÉCURISÉES) ---
+# --- ROUTES DE L'APPLICATION ---
 @app.route('/')
 @login_required
 def index():
@@ -139,46 +138,71 @@ def objectif_detail(objectif_id):
         except (ValueError, TypeError): pass
     return render_template('objectif_detail.html', objectif=objectif, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien)
 
-@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET', 'POST'])
-@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET', 'POST'])
+# --- ROUTE FORMULAIRE OBJETIF (GET) ---
+@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET'])
+@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET'])
 @login_required
 def formulaire_objectif(objectif_id):
     user_id = session['user_id']
-    if request.method == 'POST':
-        nom = request.form['nom']
-        montant_cible = float(request.form['montant_cible'])
-        date_limite = request.form['date_limite']
-        password = request.form.get('password')
+    objectif = None
+    if objectif_id:
         conn = get_db_connection()
-        user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
-        if not password or not check_password_hash(user['password'], password):
-            flash("Mot de passe incorrect !", "error")
-            conn.close()
-            return redirect(url_for('formulaire_objectif', objectif_id=objectif_id if objectif_id else ''))
-
-        if objectif_id:
-            obj_a_modifier = conn.execute('SELECT id FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
-            if obj_a_modifier:
-                conn.execute('UPDATE objectifs SET nom = ?, montant_cible = ?, date_limite = ? WHERE id = ?', (nom, montant_cible, date_limite, objectif_id))
-                flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
-            else:
-                flash("Action non autorisée.", "error")
-        else:
-            conn.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (?, ?, ?, ?, ?, ?)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
-            flash(f"L'objectif '{nom}' a été créé.", 'success')
-        conn.commit()
+        objectif = conn.execute('SELECT * FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
         conn.close()
-        return redirect(url_for('index'))
-    else: # Méthode GET
-        objectif = None
-        if objectif_id:
-            conn = get_db_connection()
-            objectif = conn.execute('SELECT * FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
-            conn.close()
-            if objectif is None:
-                flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
-                return redirect(url_for('index'))
-        return render_template('formulaire_objectif.html', objectif=objectif)
+        if objectif is None:
+            flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
+            return redirect(url_for('index'))
+    return render_template('formulaire_objectif.html', objectif=objectif)
+
+# --- NOUVELLE ROUTE : SAUVEGARDE UN NOUVEL OBJECTIF (POST) ---
+@app.route('/sauvegarder_objectif_new', methods=['POST'])
+@login_required
+def sauvegarder_objectif_new():
+    user_id = session['user_id']
+    password = request.form.get('password')
+    conn = get_db_connection()
+    user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not password or not check_password_hash(user['password'], password):
+        flash("Mot de passe incorrect !", "error")
+        conn.close()
+        return redirect(url_for('formulaire_objectif'))
+
+    nom = request.form['nom']
+    montant_cible = float(request.form['montant_cible'])
+    date_limite = request.form['date_limite']
+
+    conn.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (?, ?, ?, ?, ?, ?)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
+    flash(f"L'objectif '{nom}' a été créé.", 'success')
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
+# --- NOUVELLE ROUTE : SAUVEGARDE UN OBJECTIF EXISTANT (POST) ---
+@app.route('/sauvegarder_objectif_existing/<int:objectif_id>', methods=['POST'])
+@login_required
+def sauvegarder_objectif_existing(objectif_id):
+    user_id = session['user_id']
+    password = request.form.get('password')
+    conn = get_db_connection()
+    user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
+    if not password or not check_password_hash(user['password'], password):
+        flash("Mot de passe incorrect !", "error")
+        conn.close()
+        return redirect(url_for('formulaire_objectif', objectif_id=objectif_id))
+
+    nom = request.form['nom']
+    montant_cible = float(request.form['montant_cible'])
+    date_limite = request.form['date_limite']
+
+    obj_a_modifier = conn.execute('SELECT id FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
+    if obj_a_modifier:
+        conn.execute('UPDATE objectifs SET nom = ?, montant_cible = ?, date_limite = ? WHERE id = ?', (nom, montant_cible, date_limite, objectif_id))
+        flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
+    else:
+        flash("Action non autorisée.", "error")
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
 @app.route('/supprimer_objectif/<int:objectif_id>', methods=['POST'])
 @login_required
