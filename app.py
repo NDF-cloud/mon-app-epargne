@@ -12,20 +12,26 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = 'une-cle-vraiment-secrete-pour-les-sessions-utilisateurs'
 
+# Dans app.py, remplacez get_db_connection()
+
+import psycopg2  # Assurez-vous d'ajouter cet import en haut du fichier
+
+# ... (les autres imports comme Flask, os, etc., restent)
+
 def get_db_connection():
-    conn = sqlite3.connect('epargne.db')
-    conn.row_factory = sqlite3.Row
+    # Render définit automatiquement cette variable d'environnement
+    # 'DATABASE_URL' quand un service de base de données est connecté.
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        # Si on est en ligne sur Render (la variable existe)
+        print("Connexion à la base de données PostgreSQL en ligne...")
+        conn = psycopg2.connect(db_url)
+    else:
+        # Si on est sur notre ordinateur local (la variable n'existe pas)
+        print("Connexion à la base de données SQLite locale...")
+        conn = sqlite3.connect('epargne.db')
+        conn.row_factory = sqlite3.Row
     return conn
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash("Veuillez vous connecter pour accéder à cette page.", "error")
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 # --- QUESTIONS DE SÉCURITÉ ---
 def get_security_questions():
     return [
