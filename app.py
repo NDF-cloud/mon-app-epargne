@@ -17,17 +17,17 @@ app.secret_key = 'une-cle-vraiment-secrete-pour-les-sessions-utilisateurs'
 import psycopg2  # Assurez-vous d'ajouter cet import en haut du fichier
 
 # ... (les autres imports comme Flask, os, etc., restent)
+# Dans app.py
+import psycopg2
+import psycopg2.extras # Nouvel import
 
 def get_db_connection():
-    # Render définit automatiquement cette variable d'environnement
-    # 'DATABASE_URL' quand un service de base de données est connecté.
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
-        # Si on est en ligne sur Render (la variable existe)
         print("Connexion à la base de données PostgreSQL en ligne...")
-        conn = psycopg2.connect(db_url)
+        # L'argument cursor_factory est CRUCIAL pour accéder aux colonnes par leur nom
+        conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.DictCursor)
     else:
-        # Si on est sur notre ordinateur local (la variable n'existe pas)
         print("Connexion à la base de données SQLite locale...")
         conn = sqlite3.connect('epargne.db')
         conn.row_factory = sqlite3.Row
