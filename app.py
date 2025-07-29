@@ -1,6 +1,6 @@
 # ==============================================================================
 # FICHIER FINAL, COMPLET ET CORRIGÉ : app.py
-# (Corrige la BuildError de sauvegarde en séparant les routes POST)
+# (Intègre toutes les fonctionnalités et corrige le 'NameError: login_required')
 # ==============================================================================
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 import sqlite3
@@ -12,26 +12,21 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = 'une-cle-vraiment-secrete-pour-les-sessions-utilisateurs'
 
-# Dans app.py, remplacez get_db_connection()
-
-import psycopg2  # Assurez-vous d'ajouter cet import en haut du fichier
-
-# ... (les autres imports comme Flask, os, etc., restent)
-# Dans app.py
-import psycopg2
-import psycopg2.extras # Nouvel import
-
 def get_db_connection():
-    db_url = os.environ.get('DATABASE_URL')
-    if db_url:
-        print("Connexion à la base de données PostgreSQL en ligne...")
-        # L'argument cursor_factory est CRUCIAL pour accéder aux colonnes par leur nom
-        conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.DictCursor)
-    else:
-        print("Connexion à la base de données SQLite locale...")
-        conn = sqlite3.connect('epargne.db')
-        conn.row_factory = sqlite3.Row
+    conn = sqlite3.connect('epargne.db')
+    conn.row_factory = sqlite3.Row
     return conn
+
+# --- DÉCORATEUR DE SÉCURITÉ CORRIGÉ ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Veuillez vous connecter pour accéder à cette page.", "error")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- QUESTIONS DE SÉCURITÉ ---
 def get_security_questions():
     return [
@@ -95,7 +90,7 @@ def logout():
     flash('Vous avez été déconnecté avec succès.', 'success')
     return redirect(url_for('login'))
 
-# --- ROUTES DE L'APPLICATION ---
+# --- ROUTES DE L'APPLICATION (TOUTES SÉCURISÉES) ---
 @app.route('/')
 @login_required
 def index():
@@ -144,71 +139,46 @@ def objectif_detail(objectif_id):
         except (ValueError, TypeError): pass
     return render_template('objectif_detail.html', objectif=objectif, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien)
 
-# --- ROUTE FORMULAIRE OBJETIF (GET) ---
-@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET'])
-@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET'])
+@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET', 'POST'])
+@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET', 'POST'])
 @login_required
 def formulaire_objectif(objectif_id):
     user_id = session['user_id']
-    objectif = None
-    if objectif_id:
+    if request.method == 'POST':
+        nom = request.form['nom']
+        montant_cible = float(request.form['montant_cible'])
+        date_limite = request.form['date_limite']
+        password = request.form.get('password')
         conn = get_db_connection()
-        objectif = conn.execute('SELECT * FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
+        user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
+        if not password or not check_password_hash(user['password'], password):
+            flash("Mot de passe incorrect !", "error")
+            conn.close()
+            return redirect(url_for('formulaire_objectif', objectif_id=objectif_id if objectif_id else ''))
+
+        if objectif_id:
+            obj_a_modifier = conn.execute('SELECT id FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
+            if obj_a_modifier:
+                conn.execute('UPDATE objectifs SET nom = ?, montant_cible = ?, date_limite = ? WHERE id = ?', (nom, montant_cible, date_limite, objectif_id))
+                flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
+            else:
+                flash("Action non autorisée.", "error")
+        else:
+            conn.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (?, ?, ?, ?, ?, ?)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
+            flash(f"L'objectif '{nom}' a été créé.", 'success')
+        conn.commit()
         conn.close()
-        if objectif is None:
-            flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
-            return redirect(url_for('index'))
-    return render_template('formulaire_objectif.html', objectif=objectif)
-
-# --- NOUVELLE ROUTE : SAUVEGARDE UN NOUVEL OBJECTIF (POST) ---
-@app.route('/sauvegarder_objectif_new', methods=['POST'])
-@login_required
-def sauvegarder_objectif_new():
-    user_id = session['user_id']
-    password = request.form.get('password')
-    conn = get_db_connection()
-    user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not password or not check_password_hash(user['password'], password):
-        flash("Mot de passe incorrect !", "error")
-        conn.close()
-        return redirect(url_for('formulaire_objectif')) # Retourne au formulaire vide
-
-    nom = request.form['nom']
-    montant_cible = float(request.form['montant_cible'])
-    date_limite = request.form['date_limite']
-
-    conn.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (?, ?, ?, ?, ?, ?)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
-    flash(f"L'objectif '{nom}' a été créé.", 'success')
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
-
-# --- NOUVELLE ROUTE : SAUVEGARDE UN OBJECTIF EXISTANT (POST) ---
-@app.route('/sauvegarder_objectif_existing/<int:objectif_id>', methods=['POST'])
-@login_required
-def sauvegarder_objectif_existing(objectif_id):
-    user_id = session['user_id']
-    password = request.form.get('password')
-    conn = get_db_connection()
-    user = conn.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
-    if not password or not check_password_hash(user['password'], password):
-        flash("Mot de passe incorrect !", "error")
-        conn.close()
-        return redirect(url_for('formulaire_objectif', objectif_id=objectif_id)) # Retourne au formulaire de modification
-
-    nom = request.form['nom']
-    montant_cible = float(request.form['montant_cible'])
-    date_limite = request.form['date_limite']
-
-    obj_a_modifier = conn.execute('SELECT id FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
-    if obj_a_modifier:
-        conn.execute('UPDATE objectifs SET nom = ?, montant_cible = ?, date_limite = ? WHERE id = ?', (nom, montant_cible, date_limite, objectif_id))
-        flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
-    else:
-        flash("Action non autorisée.", "error") # Tentative de modifier un objectif qui n'appartient pas à l'utilisateur
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
+        return redirect(url_for('index'))
+    else: # Méthode GET
+        objectif = None
+        if objectif_id:
+            conn = get_db_connection()
+            objectif = conn.execute('SELECT * FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
+            conn.close()
+            if objectif is None:
+                flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
+                return redirect(url_for('index'))
+        return render_template('formulaire_objectif.html', objectif=objectif)
 
 @app.route('/supprimer_objectif/<int:objectif_id>', methods=['POST'])
 @login_required
@@ -370,7 +340,7 @@ def chart_data(objectif_id):
     conn = get_db_connection()
     objectif = conn.execute('SELECT id FROM objectifs WHERE id = ? AND user_id = ?', (objectif_id, user_id)).fetchone()
     if objectif is None: return jsonify({'error': 'Not authorized'}), 403
-    transactions = conn.execute('SELECT montant, type_transaction, date FROM transactions WHERE objectif_id = ? ORDER BY date ASC', (objectif_id,)).fetchall()
+    transactions = conn.execute('SELECT montant, type_transaction, date FROM transactions WHERE objectif_id = ? AND user_id = ? ORDER BY date ASC', (objectif_id, user_id)).fetchall()
     conn.close()
     labels, data_entrees, data_sorties = ["Départ"], [0], [0]
     montant_cumulatif_entrees, montant_cumulatif_sorties = 0, 0
