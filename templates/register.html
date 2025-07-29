@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- NOUVEAU : Balise Viewport -->
+    <title>Inscription</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; margin: 0; }
+        .container { width: 100%; max-width: 500px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 30px; margin-top: 50px; }
+        h1 { color: #005f73; text-align: center; }
+        form div { margin-bottom: 15px; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
+        form button { background-color: #006d77; color: white; cursor: pointer; border: none; padding: 12px 20px; font-size: 1.1em; border-radius: 5px; width: 100%; margin-top: 10px; }
+        .flash-messages { margin-bottom: 15px; text-align: center; }
+        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
+        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+        hr { border: 0; height: 1px; background: #eee; margin: 30px 0; }
+
+        /* Styles pour le Mode Nuit */
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .dark-mode .container { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .dark-mode h1 { color: #76c7c0; }
+
+        /* Styles Responsive */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; margin-top: 20px; }
+            h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
+    <div class="container auth-container">
+        <h1>Créer un Compte</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <form method="post">
+            <div>
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" name="username" id="username" required>
+            </div>
+            <div>
+                <label for="password">Mot de passe</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+            <hr>
+            <div>
+                <label for="security_question">Choisissez votre question de sécurité</label>
+                <select name="security_question" id="security_question" required>
+                    <option value="">-- Veuillez choisir une question --</option>
+                    <option value="Quel est le nom de votre premier animal de compagnie ?">Quel est le nom de votre premier animal de compagnie ?</option>
+                    <option value="Quelle est votre ville de naissance ?">Quelle est votre ville de naissance ?</option>
+                    <option value="Quel était le nom de votre école primaire ?">Quel était le nom de votre école primaire ?</option>
+                </select>
+            </div>
+            <div>
+                <label for="security_answer">Votre réponse secrète</label>
+                <input type="text" name="security_answer" id="security_answer" required>
+            </div>
+            <button type="submit">S'inscrire</button>
+        </form>
+        <p style="text-align:center; margin-top:20px;">
+            Déjà un compte ? <a href="{{ url_for('login') }}">Connectez-vous ici</a>.
+        </p>
+    </div>
+</body>
+</html>

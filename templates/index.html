@@ -1,14 +1,15 @@
-<!-- FICHIER COMPLET POUR : templates/index.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- NOUVEAU : Balise Viewport -->
     <title>Mes Objectifs d'Épargne</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; margin: 0; }
         .container { width: 100%; max-width: 700px; }
         .header { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h1 { color: #005f73; margin: 0; }
+        .header-info small { color: #555; }
         .header-buttons a { text-decoration: none; color: white; padding: 10px 15px; border-radius: 50%; font-size: 1.5em; line-height: 1; margin-left: 10px; }
         .add-btn { background-color: #006d77; }
         .settings-btn { background-color: #6c757d; font-size: 1.2em; padding: 12px; }
@@ -28,32 +29,55 @@
         .flash-messages { margin: 15px 0; text-align: center; }
         .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
         .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+        .archives-link { text-align: center; margin: 20px 0; }
+
+        /* Styles pour le Mode Nuit */
         body.dark-mode { background-color: #121212; color: #e0e0e0; }
         .dark-mode .header, .dark-mode .total-container, .dark-mode .objectif-item { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .dark-mode h1, .dark-mode .total-solde { color: #76c7c0; }
+        .dark-mode .header-info small { color: #aaa; }
         .dark-mode .objectif-nom { color: #80cbc4; }
         .dark-mode .progress-container { background-color: #424242; }
+
+        /* Styles Responsive */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 0; } /* Retirer le padding pour le conteneur principal */
+            .header { flex-direction: column; align-items: center; text-align: center; padding: 15px; }
+            .header-info { margin-bottom: 10px; }
+            .header-info h1 { font-size: 1.8em; }
+            .header-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+            .header-buttons a { margin: 0 4px; padding: 8px 12px; font-size: 1.2em; }
+            .total-container { padding: 15px; }
+            .total-solde { flex-direction: column; gap: 8px; }
+            .objectifs-list { margin-top: 15px; }
+            .objectif-item { flex-direction: column; align-items: flex-start; padding: 15px; }
+            .objectif-header { width: 100%; margin-bottom: 8px; }
+            .objectif-actions { width: 100%; text-align: center; padding: 10px 0 0; border-top: 1px solid #eee; margin-top: 10px; }
+        }
     </style>
 </head>
 <body>
     <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
     <div class="container">
         <div class="header">
-            <h1>Mes Objectifs</h1>
+            <div class="header-info">
+                <h1>Mes Objectifs</h1>
+                <small>Connecté en tant que : <strong>{{ session['username'] }}</strong></small>
+            </div>
             <div class="header-buttons">
                 <a href="{{ url_for('parametres') }}" class="settings-btn" title="Paramètres">⚙</a>
                 <a href="{{ url_for('formulaire_objectif') }}" class="add-btn" title="Ajouter un objectif">+</a>
             </div>
         </div>
         <div class="total-container">
-            <h3>Épargne Totale</h3>
+            <h3>Épargne Totale Active</h3>
             <div class="total-solde">
                 <span id="solde-masque">****** XAF</span>
                 <span id="solde-reel" style="display:none;">{{ "%.2f"|format(total_epargne) }} XAF</span>
                 <button id="toggle-solde" title="Afficher/Cacher le solde"></button>
             </div>
         </div>
-
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="flash-messages">
@@ -63,11 +87,9 @@
             </div>
           {% endif %}
         {% endwith %}
-
-        <div class="archives-link" style="text-align: center; margin: 20px 0;">
+        <div class="archives-link">
             <a href="{{ url_for('archives') }}">Voir mes objectifs terminés (Archives)</a>
         </div>
-
         <ul class="objectifs-list">
             {% for obj in objectifs %}
             <li class="objectif-item">
@@ -101,9 +123,9 @@
                 soldeMasque.style.display = 'inline';
                 return;
             }
-            const password = prompt("Veuillez entrer le mot de passe pour afficher le solde :");
+            const password = prompt("Veuillez entrer votre mot de passe pour afficher le solde :");
             if (password !== null) {
-                fetch('/api/verify_password', {
+                fetch('/api/check_user_password', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ password: password })
@@ -117,10 +139,11 @@
                 });
             }
         });
+
         function confirmerSuppression(objectifId) {
             const confirmation = confirm("Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cet objectif ?");
             if (confirmation) {
-                const password = prompt("Pour confirmer, veuillez entrer votre mot de passe :");
+                const password = prompt("Pour confirmer la suppression, veuillez entrer votre mot de passe :");
                 if (password !== null) {
                     const form = document.getElementById('form-delete-' + objectifId);
                     form.querySelector('input[name="password"]').value = password;
