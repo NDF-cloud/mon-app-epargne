@@ -1,20 +1,25 @@
-# setup_database.py
+# ==============================================================================
+# FICHIER FINAL PRÊT À L'EMPLOI : setup_postgres.py
+# (Contient votre URL et la structure complète de la DB)
+# ==============================================================================
 import psycopg2
 
-# REMPLACEZ CETTE LIGNE PAR L'URL "EXTERNAL" DE VOTRE NOUVELLE DB SUR RENDER
-DATABASE_URL = "VOTRE_EXTERNAL_DATABASE_URL_ICI"
+# Votre URL externe, directement intégrée.
+DATABASE_URL = "postgresql://overview_db_user:mjfjXVEr7SDMOp9JLafC81qmyJOoiYec@dpg-d24lug3e5dus73fqh7dg-a.frankfurt-postgres.render.com/overview_db"
 
-if "VOTRE_EXTERNAL_DATABASE_URL_ICI" in DATABASE_URL:
-    print("ERREUR : Veuillez remplacer l'URL de la base de données dans le script.")
-else:
-    print("Connexion à PostgreSQL...")
+print("Connexion à PostgreSQL avec votre URL...")
+try:
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
+    print("Connexion réussie.")
+
     print("Suppression des anciennes tables (si elles existent)...")
     cur.execute("DROP TABLE IF EXISTS transactions;")
     cur.execute("DROP TABLE IF EXISTS objectifs;")
     cur.execute("DROP TABLE IF EXISTS users;")
-    print("Création de la structure finale des tables...")
+    print("Anciennes tables supprimées.")
+
+    print("Création de la structure finale...")
     cur.execute('''
     CREATE TABLE users (
         id SERIAL PRIMARY KEY,
@@ -24,6 +29,7 @@ else:
         security_answer TEXT
     );
     ''')
+
     cur.execute('''
     CREATE TABLE objectifs (
         id SERIAL PRIMARY KEY,
@@ -35,6 +41,7 @@ else:
         user_id INTEGER NOT NULL REFERENCES users(id)
     );
     ''')
+
     cur.execute('''
     CREATE TABLE transactions (
         id SERIAL PRIMARY KEY,
@@ -46,7 +53,17 @@ else:
     );
     ''')
     print("Structure des tables créée avec succès.")
+
     conn.commit()
-    cur.close()
-    conn.close()
-    print("Connexion fermée. La base de données est prête.")
+    print("Changements sauvegardés.")
+
+except Exception as e:
+    print(f"\n\n--- ERREUR ---")
+    print(f"Une erreur est survenue : {e}")
+    print("Vérifiez que votre URL de base de données est correcte et que la DB est active sur Render.")
+
+finally:
+    if 'conn' in locals() and conn is not None:
+        cur.close()
+        conn.close()
+        print("Connexion fermée. La base de données est prête.")

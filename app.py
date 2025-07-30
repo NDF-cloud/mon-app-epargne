@@ -18,16 +18,10 @@ def get_db_connection():
     db_url = os.environ.get('DATABASE_URL')
     if db_url:
         try:
-            print("Tentative de connexion à PostgreSQL...")
-            conn = psycopg2.connect(db_url)
-            print("Connexion à PostgreSQL réussie !")
-            return conn
-        except psycopg2.OperationalError as e:
-            print(f"!!!!!!!! ERREUR CRITIQUE DE CONNEXION POSTGRESQL !!!!!!!!")
-            print(e)
+            return psycopg2.connect(db_url)
+        except psycopg2.OperationalError:
             return None
     else:
-        print("Connexion à SQLite (local)...")
         conn = sqlite3.connect('epargne.db')
         conn.row_factory = sqlite3.Row
         return conn
@@ -60,11 +54,13 @@ def register():
         if not username or not password or not question or not answer:
             flash("Veuillez remplir tous les champs.", "error")
             return render_template('register.html', questions=get_security_questions())
+
         conn = get_db_connection()
         try:
             with conn.cursor() as cur:
                 hashed_password = generate_password_hash(password)
                 hashed_answer = generate_password_hash(answer)
+                # Utilise %s pour PostgreSQL, sera interprété comme ? par sqlite3
                 cur.execute('INSERT INTO users (username, password, security_question, security_answer) VALUES (%s, %s, %s, %s)', (username, hashed_password, question, hashed_answer))
             conn.commit()
             flash('Inscription réussie ! Vous pouvez maintenant vous connecter.', 'success')
@@ -82,7 +78,8 @@ def login():
         username = request.form['username']
         password = request.form['password']
         conn = get_db_connection()
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        # Utilise DictCursor pour accéder par nom de colonne avec PostgreSQL
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
             cur.execute('SELECT * FROM users WHERE username = %s', (username,))
             user = cur.fetchone()
         conn.close()
@@ -101,19 +98,76 @@ def logout():
     flash('Vous avez été déconnecté avec succès.', 'success')
     return redirect(url_for('login'))
 
+# --- FLUX DE RÉINITIALISATION DE MOT DE PASSE OUBLIÉ ---
+@app.route('/forgot_password', methods=('GET', 'POST'))
+def forgot_password_request():
+    if 'user_id' in session: return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form['username']
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
+            cur.execute('SELECT id, security_question FROM users WHERE username = %s', (username,))
+            user = cur.fetchone()
+        conn.close()
+        if user and user['security_question']:
+            session['reset_user'] = username
+            return redirect(url_for('forgot_password_answer'))
+        else:
+            flash("Utilisateur non trouvé ou aucune question de sécurité définie.", "error")
+    return render_template('forgot_password_request.html')
+
+@app.route('/forgot_password/answer', methods=('GET', 'POST'))
+def forgot_password_answer():
+    username = session.get('reset_user')
+    if not username: return redirect(url_for('login'))
+    conn = get_db_connection()
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
+        cur.execute('SELECT security_question, security_answer FROM users WHERE username = %s', (username,))
+        user = cur.fetchone()
+    conn.close()
+    if user is None:
+        flash("Erreur de session. Veuillez recommencer.", "error")
+        return redirect(url_for('forgot_password_request'))
+    if request.method == 'POST':
+        answer = request.form['answer']
+        if check_password_hash(user['security_answer'], answer):
+            session['reset_authorized'] = True
+            return redirect(url_for('reset_password_final'))
+        else:
+            flash("La réponse secrète est incorrecte.", "error")
+    return render_template('forgot_password_answer.html', question=user['security_question'])
+
+@app.route('/reset_password_final', methods=('GET', 'POST'))
+def reset_password_final():
+    username = session.get('reset_user')
+    if not session.get('reset_authorized') or not username: return redirect(url_for('login'))
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        hashed_password = generate_password_hash(new_password)
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute('UPDATE users SET password = %s WHERE username = %s', (hashed_password, username))
+        conn.commit()
+        conn.close()
+        session.pop('reset_user', None)
+        session.pop('reset_authorized', None)
+        flash("Mot de passe réinitialisé ! Vous pouvez vous connecter.", "success")
+        return redirect(url_for('login'))
+    return render_template('reset_password_final.html')
+
 # --- ROUTES DE L'APPLICATION ---
 @app.route('/')
 @login_required
 def index():
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute("SELECT * FROM objectifs WHERE status = 'actif' AND user_id = %s ORDER BY id DESC", (user_id,))
         objectifs_db = cur.fetchall()
         cur.execute("SELECT SUM(montant_actuel) as total FROM objectifs WHERE status = 'actif' AND user_id = %s", (user_id,))
         total_epargne_result = cur.fetchone()
     conn.close()
-    total_epargne = total_epargne_result['total'] if total_epargne_result and total_epargne_result['total'] else 0
+    total_epargne = total_epargne_result['total'] if total_epargne_result and total_epargne_result['total'] is not None else 0
     objectifs = []
     for obj in objectifs_db:
         obj_dict = dict(obj)
@@ -127,7 +181,7 @@ def index():
 def archives():
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute("SELECT * FROM objectifs WHERE status = 'archivé' AND user_id = %s ORDER BY id DESC", (user_id,))
         objectifs_archives = cur.fetchall()
     conn.close()
@@ -138,7 +192,7 @@ def archives():
 def objectif_detail(objectif_id):
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT * FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
         objectif = cur.fetchone()
         if objectif is None:
@@ -152,7 +206,8 @@ def objectif_detail(objectif_id):
     rythme_quotidien = 0
     if objectif['date_limite'] and montant_restant > 0:
         try:
-            jours_restants = (datetime.strptime(objectif['date_limite'], '%Y-%m-%d') - datetime.now()).days
+            date_limite = datetime.strptime(objectif['date_limite'], '%Y-%m-%d')
+            jours_restants = (date_limite - datetime.now()).days
             if jours_restants > 0: rythme_quotidien = montant_restant / jours_restants
         except (ValueError, TypeError): pass
     return render_template('objectif_detail.html', objectif=objectif, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien)
@@ -161,11 +216,11 @@ def objectif_detail(objectif_id):
 @app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET'])
 @login_required
 def formulaire_objectif(objectif_id):
-    user_id = session['user_id']
     objectif = None
     if objectif_id:
+        user_id = session['user_id']
         conn = get_db_connection()
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
             cur.execute('SELECT * FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
             objectif = cur.fetchone()
         conn.close()
@@ -181,7 +236,7 @@ def sauvegarder_objectif(objectif_id):
     user_id = session['user_id']
     password = request.form.get('password')
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
         if not password or not check_password_hash(user['password'], password):
@@ -212,7 +267,7 @@ def supprimer_objectif(objectif_id):
     user_id = session['user_id']
     password = request.form.get('password')
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
         if not password or not check_password_hash(user['password'], password):
@@ -249,7 +304,7 @@ def archiver_objectif(objectif_id):
 def add_transaction(objectif_id):
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT * FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
         objectif = cur.fetchone()
         if objectif is None:
@@ -265,13 +320,12 @@ def add_transaction(objectif_id):
     conn.close()
     return redirect(url_for('objectif_detail', objectif_id=objectif_id))
 
-# --- PARAMÈTRES ET MOT DE PASSE ---
 @app.route('/parametres')
 @login_required
 def parametres():
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT username, security_question FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
     conn.close()
@@ -290,7 +344,7 @@ def update_password():
         flash("Les deux champs sont requis pour changer de mot de passe.", "error")
         return redirect(url_for('parametres'))
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
         if not check_password_hash(user['password'], ancien_mdp):
@@ -303,64 +357,6 @@ def update_password():
     conn.close()
     return redirect(url_for('parametres'))
 
-# --- FLUX DE RÉINITIALISATION DE MOT DE PASSE OUBLIÉ ---
-@app.route('/forgot_password', methods=('GET', 'POST'))
-def forgot_password_request():
-    if 'user_id' in session: return redirect(url_for('index'))
-    if request.method == 'POST':
-        username = request.form['username']
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute('SELECT id, security_question FROM users WHERE username = %s', (username,))
-            user = cur.fetchone()
-        conn.close()
-        if user and user['security_question']:
-            session['reset_user'] = username
-            return redirect(url_for('forgot_password_answer'))
-        else:
-            flash("Utilisateur non trouvé ou aucune question de sécurité définie.", "error")
-    return render_template('forgot_password_request.html')
-
-@app.route('/forgot_password/answer', methods=('GET', 'POST'))
-def forgot_password_answer():
-    username = session.get('reset_user')
-    if not username: return redirect(url_for('login'))
-    conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-        cur.execute('SELECT security_question, security_answer FROM users WHERE username = %s', (username,))
-        user = cur.fetchone()
-    conn.close()
-    if user is None:
-        flash("Erreur lors de la récupération de l'utilisateur.", "error")
-        return redirect(url_for('login'))
-    if request.method == 'POST':
-        answer = request.form['answer']
-        if check_password_hash(user['security_answer'], answer):
-            session['reset_authorized'] = True
-            return redirect(url_for('reset_password_final'))
-        else:
-            flash("La réponse secrète est incorrecte.", "error")
-    return render_template('forgot_password_answer.html', question=user['security_question'])
-
-@app.route('/reset_password_final', methods=('GET', 'POST'))
-def reset_password_final():
-    username = session.get('reset_user')
-    if not session.get('reset_authorized') or not username:
-        return redirect(url_for('login'))
-    if request.method == 'POST':
-        new_password = request.form['new_password']
-        hashed_password = generate_password_hash(new_password)
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute('UPDATE users SET password = %s WHERE username = %s', (hashed_password, username))
-        conn.commit()
-        conn.close()
-        session.pop('reset_user', None)
-        session.pop('reset_authorized', None)
-        flash("Mot de passe réinitialisé avec succès ! Vous pouvez vous connecter.", "success")
-        return redirect(url_for('login'))
-    return render_template('reset_password_final.html')
-
 # --- API Routes ---
 @app.route('/api/check_user_password', methods=['POST'])
 @login_required
@@ -368,7 +364,7 @@ def check_user_password():
     user_id = session['user_id']
     password = request.json.get('password')
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
         user = cur.fetchone()
     conn.close()
@@ -381,7 +377,7 @@ def check_user_password():
 def chart_data(objectif_id):
     user_id = session['user_id']
     conn = get_db_connection()
-    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor if os.environ.get('DATABASE_URL') else None) as cur:
         cur.execute('SELECT id FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
         objectif = cur.fetchone()
         if objectif is None: return jsonify({'error': 'Not authorized'}), 403
