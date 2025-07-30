@@ -1,5 +1,6 @@
 # ==============================================================================
-# FICHIER FINAL, ULTIME ET 100% COMPLET : app.py
+# FICHIER FINAL, COMPLET ET SÉCURISÉ : app.py
+# (Multi-Utilisateurs + PostgreSQL + Toutes les fonctionnalités)
 # ==============================================================================
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 import sqlite3
@@ -59,7 +60,6 @@ def register():
         if not username or not password or not question or not answer:
             flash("Veuillez remplir tous les champs.", "error")
             return render_template('register.html', questions=get_security_questions())
-
         conn = get_db_connection()
         try:
             with conn.cursor() as cur:
@@ -157,49 +157,54 @@ def objectif_detail(objectif_id):
         except (ValueError, TypeError): pass
     return render_template('objectif_detail.html', objectif=objectif, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien)
 
-@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET', 'POST'])
-@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET', 'POST'])
+@app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET'])
+@app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET'])
 @login_required
 def formulaire_objectif(objectif_id):
     user_id = session['user_id']
-    if request.method == 'POST':
+    objectif = None
+    if objectif_id:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute('SELECT * FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
+            objectif = cur.fetchone()
+        conn.close()
+        if objectif is None:
+            flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
+            return redirect(url_for('index'))
+    return render_template('formulaire_objectif.html', objectif=objectif)
+
+@app.route('/sauvegarder_objectif/', defaults={'objectif_id': None}, methods=['POST'])
+@app.route('/sauvegarder_objectif/<int:objectif_id>', methods=['POST'])
+@login_required
+def sauvegarder_objectif(objectif_id):
+    user_id = session['user_id']
+    password = request.form.get('password')
+    conn = get_db_connection()
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
+        if not password or not check_password_hash(user['password'], password):
+            flash("Mot de passe incorrect !", "error")
+            conn.close()
+            return redirect(url_for('formulaire_objectif', objectif_id=objectif_id if objectif_id else None))
+
         nom = request.form['nom']
         montant_cible = float(request.form['montant_cible'])
         date_limite = request.form['date_limite']
-        password = request.form.get('password')
-        conn = get_db_connection()
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute('SELECT password FROM users WHERE id = %s', (user_id,))
-            user = cur.fetchone()
-            if not password or not check_password_hash(user['password'], password):
-                flash("Mot de passe incorrect !", "error")
-                conn.close()
-                return redirect(url_for('formulaire_objectif', objectif_id=objectif_id if objectif_id else ''))
 
-            if objectif_id:
-                cur.execute('SELECT id FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
-                obj_a_modifier = cur.fetchone()
-                if obj_a_modifier:
-                    cur.execute('UPDATE objectifs SET nom = %s, montant_cible = %s, date_limite = %s WHERE id = %s', (nom, montant_cible, date_limite, objectif_id))
-                    flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
-            else:
-                cur.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (%s, %s, %s, %s, %s, %s)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
-                flash(f"L'objectif '{nom}' a été créé.", 'success')
-            conn.commit()
-        conn.close()
-        return redirect(url_for('index'))
-    else: # GET
-        objectif = None
         if objectif_id:
-            conn = get_db_connection()
-            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-                cur.execute('SELECT * FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
-                objectif = cur.fetchone()
-            conn.close()
-            if objectif is None:
-                flash("Cet objectif n'existe pas ou ne vous appartient pas.", "error")
-                return redirect(url_for('index'))
-        return render_template('formulaire_objectif.html', objectif=objectif)
+            cur.execute('SELECT id FROM objectifs WHERE id = %s AND user_id = %s', (objectif_id, user_id))
+            obj_a_modifier = cur.fetchone()
+            if obj_a_modifier:
+                cur.execute('UPDATE objectifs SET nom = %s, montant_cible = %s, date_limite = %s WHERE id = %s', (nom, montant_cible, date_limite, objectif_id))
+                flash(f"L'objectif '{nom}' a été mis à jour.", 'success')
+        else:
+            cur.execute('INSERT INTO objectifs (nom, montant_cible, montant_actuel, date_limite, status, user_id) VALUES (%s, %s, %s, %s, %s, %s)', (nom, montant_cible, 0, date_limite, 'actif', user_id))
+            flash(f"L'objectif '{nom}' a été créé.", 'success')
+        conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
 @app.route('/supprimer_objectif/<int:objectif_id>', methods=['POST'])
 @login_required
@@ -313,7 +318,7 @@ def forgot_password_request():
             session['reset_user'] = username
             return redirect(url_for('forgot_password_answer'))
         else:
-            flash("Utilisateur non trouvé ou aucune question de sécurité définie pour ce compte.", "error")
+            flash("Utilisateur non trouvé ou aucune question de sécurité définie.", "error")
     return render_template('forgot_password_request.html')
 
 @app.route('/forgot_password/answer', methods=('GET', 'POST'))
@@ -400,15 +405,15 @@ def chart_data(objectif_id):
 
 # --- Point de démarrage ---
 if __name__ == '__main__':
-    # Logique pour la création locale de la DB SQLite
     if not os.path.exists('epargne.db') and not os.environ.get('DATABASE_URL'):
         print("Base de données SQLite non trouvée, création...")
-        conn = get_db_connection()
-        with conn:
-            cur = conn.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, security_question TEXT, security_answer TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS objectifs (id INTEGER PRIMARY KEY, nom TEXT NOT NULL, montant_cible REAL NOT NULL, montant_actuel REAL NOT NULL, date_limite TEXT, status TEXT NOT NULL DEFAULT 'actif', user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id))")
-            cur.execute("CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY, objectif_id INTEGER NOT NULL, montant REAL NOT NULL, type_transaction TEXT NOT NULL, date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, user_id INTEGER NOT NULL, FOREIGN KEY (objectif_id) REFERENCES objectifs (id), FOREIGN KEY (user_id) REFERENCES users (id))")
+        conn = sqlite3.connect('epargne.db')
+        cur = conn.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, security_question TEXT, security_answer TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS objectifs (id INTEGER PRIMARY KEY, nom TEXT NOT NULL, montant_cible REAL NOT NULL, montant_actuel REAL NOT NULL, date_limite TEXT, status TEXT NOT NULL DEFAULT 'actif', user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id))")
+        cur.execute("CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY, objectif_id INTEGER NOT NULL, montant REAL NOT NULL, type_transaction TEXT NOT NULL, date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, user_id INTEGER NOT NULL, FOREIGN KEY (objectif_id) REFERENCES objectifs (id), FOREIGN KEY (user_id) REFERENCES users (id))")
+        conn.commit()
+        conn.close()
         print("Base de données SQLite créée.")
 
     app.run(debug=True)
