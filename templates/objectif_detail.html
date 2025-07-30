@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- NOUVEAU : Balise Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détail de l'Objectif - {{ objectif.nom }}</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; margin: 0; }
         .container { width: 100%; max-width: 700px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 30px; }
@@ -16,7 +16,7 @@
         .stat { text-align: center; }
         .stat p { margin: 5px 0; font-size: 1.5em; font-weight: bold; color: #0a9396; }
         .stat span { font-size: 0.9em; color: #555; }
-        .progress-container { background-color: #e9ecef; border-radius: 5px; height: 30px; margin: 20px 0; overflow: hidden; }
+        .progress-bar-container { background-color: #e9ecef; border-radius: 5px; height: 30px; margin: 20px 0; overflow: hidden; }
         .progress-bar { background-color: #94d2bd; height: 100%; text-align: center; line-height: 30px; color: white; font-weight: bold; }
         form.transaction-form { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
         form.transaction-form input, form.transaction-form select, form.transaction-form button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; }
@@ -30,6 +30,7 @@
         .archive-section button { background-color: #28a745; font-size: 1.2em; padding: 15px 30px; border-radius: 8px; color: white; border: none; cursor: pointer; }
         .delete-section { text-align: right; margin-top: 20px; }
         .delete-section button { background: none; border: none; color: #e63946; cursor: pointer; text-decoration: underline; }
+        .back-link { display: block; margin-bottom: 20px; }
 
         /* Styles pour le Mode Nuit */
         body.dark-mode { background-color: #121212; color: #e0e0e0; }
@@ -46,15 +47,14 @@
             body { padding: 10px; }
             .container { padding: 20px; }
             h1 { font-size: 1.8em; }
-            .header { flex-direction: column; align-items: center; text-align: center; padding: 15px; }
-            .header-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
-            .header-buttons a { margin: 0 4px; padding: 8px 12px; font-size: 1.2em; }
+            .header { flex-direction: column; align-items: center; text-align: center; }
+            .header-buttons { margin-top: 10px; }
             .stats { flex-direction: column; align-items: center; }
             .stat { width: 100%; margin-bottom: 15px; }
             .progress-container { margin: 15px 0; }
             form.transaction-form { flex-direction: column; }
-            form.transaction-form input, form.transaction-form select, form.transaction-form button { width: 100%; }
-            table { display: block; overflow-x: auto; white-space: nowrap; } /* Rendre la table scrollable horizontalement */
+            form.transaction-form input, form.transaction-form select, form.transaction-form button { width: 100%; box-sizing: border-box; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
             th, td { padding: 8px; font-size: 0.9em; }
         }
     </style>
@@ -75,7 +75,7 @@
             <div class="stat"> <p>{{ "%.2f"|format(objectif.montant_cible) }} XAF</p> <span>Objectif</span> </div>
         </div>
         <h2>Progression : {{ "%.1f"|format(progression) }}%</h2>
-        <div class="progress-container">
+        <div class="progress-bar-container">
             <div class="progress-bar" style="width: {{ progression }}%;">{{ "%.1f"|format(progression) }}%</div>
         </div>
         <div class="stats">
@@ -103,7 +103,8 @@
             <tbody>
                 {% for trans in transactions %}
                 <tr>
-                    <td>{{ trans.date.split(' ')[0] }}</td>
+                    <!-- LA CORRECTION EST ICI -->
+                    <td>{{ trans.date.strftime('%Y-%m-%d') }}</td>
                     <td class="{{ trans.type_transaction }}">{{ trans.type_transaction|capitalize }}</td>
                     <td class="{{ trans.type_transaction }}">{{ "%.2f"|format(trans.montant) }} XAF</td>
                 </tr>
@@ -128,6 +129,8 @@
             </form>
         </div>
     </div>
+
+    <!-- Le script du graphique et de la suppression -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const chartCanvas = document.getElementById('evolutionChart');
