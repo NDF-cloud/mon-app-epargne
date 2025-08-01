@@ -1,0 +1,177 @@
+<!-- Contenu de l'onglet Dashboard -->
+<div class="tab-content active">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Tableau de Bord</h2>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-piggy-bank fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Objectifs Actifs</h5>
+                    <h3 class="text-primary">{{ stats.total_objectifs }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-coins fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Épargne Totale</h5>
+                    <h3 class="text-success">{{ format_currency(stats.epargne_totale) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-tasks fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Tâches Totales</h5>
+                    <h3 class="text-warning">{{ stats.total_taches }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title">Tâches Terminées</h5>
+                    <h3 class="text-info">{{ stats.taches_terminees }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques et visualisations -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Progression des Objectifs</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="objectifsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Répartition des Tâches</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="tachesChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions Rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('formulaire_objectif') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-plus mb-2"></i><br>
+                                Nouvel Objectif
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('formulaire_tache') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-tasks mb-2"></i><br>
+                                Nouvelle Tâche
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('formulaire_evenement') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-calendar mb-2"></i><br>
+                                Nouvel Événement
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('rapports') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-chart-bar mb-2"></i><br>
+                                Voir Rapports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Graphique pour les objectifs
+const objectifsCtx = document.getElementById('objectifsChart').getContext('2d');
+new Chart(objectifsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Objectifs Actifs', 'Objectifs Inactifs'],
+        datasets: [{
+            data: [{{ stats.total_objectifs }}, 0],
+            backgroundColor: ['#667eea', '#e9ecef'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Graphique pour les tâches
+const tachesCtx = document.getElementById('tachesChart').getContext('2d');
+new Chart(tachesCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Terminées', 'En cours'],
+        datasets: [{
+            label: 'Tâches',
+            data: [{{ stats.taches_terminees }}, {{ stats.total_taches - stats.taches_terminees }}],
+            backgroundColor: ['#28a745', '#ffc107'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>

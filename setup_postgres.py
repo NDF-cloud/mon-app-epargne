@@ -1,69 +1,136 @@
 # ==============================================================================
-# FICHIER FINAL PRÊT À L'EMPLOI : setup_postgres.py
-# (Contient votre URL et la structure complète de la DB)
+# SCRIPT DE CONFIGURATION POSTGRESQL POUR L'APPLICATION D'ÉPARGNE
 # ==============================================================================
+import os
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
-# Votre URL externe, directement intégrée.
-DATABASE_URL = "postgresql://overview_db_user:mjfjXVEr7SDMOp9JLafC81qmyJOoiYec@dpg-d24lug3e5dus73fqh7dg-a.frankfurt-postgres.render.com/overview_db"
+def setup_database():
+    # Récupération de l'URL de la base de données depuis les variables d'environnement
+    database_url = os.environ.get('DATABASE_URL')
 
-print("Connexion à PostgreSQL avec votre URL...")
-try:
-    conn = psycopg2.connect(DATABASE_URL)
-    cur = conn.cursor()
-    print("Connexion réussie.")
+    if not database_url:
+        print("❌ ERREUR : Variable d'environnement DATABASE_URL non définie")
+        print("💡 Assurez-vous que DATABASE_URL est configurée dans vos variables d'environnement")
+        return False
 
-    print("Suppression des anciennes tables (si elles existent)...")
-    cur.execute("DROP TABLE IF EXISTS transactions;")
-    cur.execute("DROP TABLE IF EXISTS objectifs;")
-    cur.execute("DROP TABLE IF EXISTS users;")
-    print("Anciennes tables supprimées.")
+    try:
+        # Connexion à la base de données PostgreSQL
+        conn = psycopg2.connect(database_url)
+        cursor = conn.cursor()
 
-    print("Création de la structure finale...")
-    cur.execute('''
-    CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        security_question TEXT,
-        security_answer TEXT
-    );
-    ''')
+        print("✅ Connexion à PostgreSQL réussie")
 
-    cur.execute('''
-    CREATE TABLE objectifs (
-        id SERIAL PRIMARY KEY,
-        nom TEXT NOT NULL,
-        montant_cible REAL NOT NULL,
-        montant_actuel REAL NOT NULL,
-        date_limite TEXT,
-        status TEXT NOT NULL DEFAULT 'actif',
-        user_id INTEGER NOT NULL REFERENCES users(id)
-    );
-    ''')
+        # Création de la table users
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(80) UNIQUE NOT NULL,
+                password VARCHAR(120) NOT NULL,
+                security_question TEXT NOT NULL,
+                security_answer VARCHAR(120) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("✅ Table 'users' créée/vérifiée")
 
-    cur.execute('''
-    CREATE TABLE transactions (
-        id SERIAL PRIMARY KEY,
-        objectif_id INTEGER NOT NULL REFERENCES objectifs(id),
-        montant REAL NOT NULL,
-        type_transaction TEXT NOT NULL,
-        date TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
-        user_id INTEGER NOT NULL REFERENCES users(id)
-    );
-    ''')
-    print("Structure des tables créée avec succès.")
+        # Création de la table objectifs
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS objectifs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                nom VARCHAR(200) NOT NULL,
+                montant_objectif DECIMAL(10,2) NOT NULL,
+                montant_actuel DECIMAL(10,2) DEFAULT 0,
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                archive BOOLEAN DEFAULT FALSE,
+                description TEXT
+            )
+        """)
+        print("✅ Table 'objectifs' créée/vérifiée")
 
-    conn.commit()
-    print("Changements sauvegardés.")
+        # Création de la table transactions
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transactions (
+                id SERIAL PRIMARY KEY,
+                objectif_id INTEGER NOT NULL REFERENCES objectifs(id) ON DELETE CASCADE,
+                montant DECIMAL(10,2) NOT NULL,
+                date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                description TEXT
+            )
+        """)
+        print("✅ Table 'transactions' créée/vérifiée")
 
-except Exception as e:
-    print(f"\n\n--- ERREUR ---")
-    print(f"Une erreur est survenue : {e}")
-    print("Vérifiez que votre URL de base de données est correcte et que la DB est active sur Render.")
+        # Création de la table tâches
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS taches (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                titre VARCHAR(200) NOT NULL,
+                description TEXT,
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                termine BOOLEAN DEFAULT FALSE,
+                ordre INTEGER DEFAULT 0
+            )
+        """)
+        print("✅ Table 'taches' créée/vérifiée")
 
-finally:
-    if 'conn' in locals() and conn is not None:
-        cur.close()
+        # Création de la table étapes
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS etapes (
+                id SERIAL PRIMARY KEY,
+                tache_id INTEGER NOT NULL REFERENCES taches(id) ON DELETE CASCADE,
+                description VARCHAR(500) NOT NULL,
+                terminee BOOLEAN DEFAULT FALSE,
+                ordre INTEGER NOT NULL,
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("✅ Table 'etapes' créée/vérifiée")
+
+        # Validation des changements
+        conn.commit()
+        print("✅ Toutes les tables ont été créées avec succès !")
+
+        # Test de connexion et affichage des informations
+        cursor.execute("SELECT version();")
+        version = cursor.fetchone()
+        print(f"📊 Version PostgreSQL : {version[0]}")
+
+        cursor.execute("SELECT COUNT(*) FROM users;")
+        nb_users = cursor.fetchone()[0]
+        print(f"👥 Nombre d'utilisateurs : {nb_users}")
+
+        cursor.execute("SELECT COUNT(*) FROM objectifs;")
+        nb_objectifs = cursor.fetchone()[0]
+        print(f"💰 Nombre d'objectifs : {nb_objectifs}")
+
+        cursor.execute("SELECT COUNT(*) FROM taches;")
+        nb_taches = cursor.fetchone()[0]
+        print(f"📝 Nombre de tâches : {nb_taches}")
+
+        cursor.close()
         conn.close()
-        print("Connexion fermée. La base de données est prête.")
+
+        print("\n🎉 Configuration PostgreSQL terminée avec succès !")
+        print("🚀 Votre application est prête à être utilisée.")
+
+        return True
+
+    except Exception as e:
+        print(f"❌ ERREUR lors de la configuration : {e}")
+        return False
+
+if __name__ == "__main__":
+    print("🔧 Configuration de la base de données PostgreSQL...")
+    success = setup_database()
+
+    if success:
+        print("\n✅ Configuration terminée avec succès !")
+        print("💡 Vous pouvez maintenant lancer votre application avec : python app.py")
+    else:
+        print("\n❌ Échec de la configuration")
+        print("💡 Vérifiez vos paramètres de connexion PostgreSQL")

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Mes Tâches - OverView</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }
+        /* Styles pour les onglets de navigation */
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .nav-tab.active {
+            background: rgba(255, 255, 255, 0.35);
+            font-weight: bold;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .taches-list { list-style-type: none; padding: 0; }
+        .tache-item {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .tache-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+        .tache-item a.main-link { display: block; text-decoration: none; color: inherit; }
+        .tache-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .tache-titre {
+            font-weight: bold;
+            font-size: 1.6em;
+            color: #1a202c;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .tache-progression-text {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #1a202c;
+        }
+        .progress-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 8px;
+            margin-top: 12px;
+            height: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #4c63d2, #667eea);
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+        .tache-actions { margin-top: 15px; text-align: right; }
+        .tache-actions button {
+            background: #e74c3c;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .tache-actions button:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        .section-title {
+            font-size: 2em;
+            color: #1a202c;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e2e8f0;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .flash-messages { margin: 15px 0; text-align: center; }
+        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
+        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
+
+        /* Styles pour le diagramme circulaire */
+        .total-container {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .total-container h3 {
+            color: #4c63d2;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .chart-info {
+            text-align: left;
+        }
+
+        .chart-percentage {
+            font-size: 3em;
+            font-weight: bold;
+            color: #4c63d2;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-label {
+            color: #4a5568;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        /* Styles pour le Mode Nuit */
+        body.dark-mode { background-color: #121212; color: #e0e0e0; }
+        .dark-mode .header, .dark-mode .tache-item { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .dark-mode h1, .dark-mode .section-title { color: #76c7c0; }
+        .dark-mode .header-info small { color: #aaa; }
+        .dark-mode .tache-titre { color: #80cbc4; }
+        .dark-mode .progress-container { background-color: #424242; }
+        .dark-mode .nav-tabs { background-color: #1e1e1e; }
+        .dark-mode .nav-tab { color: #aaa; }
+        .dark-mode .nav-tab:hover { background-color: rgba(118, 199, 192, 0.1); }
+        .dark-mode .nav-tab.active { background-color: #76c7c0; color: #121212; }
+
+        /* Styles Responsive */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 0; }
+            .header { flex-direction: column; align-items: center; text-align: center; padding: 15px; }
+            .header-info { margin-bottom: 10px; }
+            .header-info h1 { font-size: 1.8em; }
+            .header-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+            .header-buttons a { margin: 0 4px; padding: 8px 12px; font-size: 1.2em; }
+            .nav-tabs { flex-direction: column; margin: 15px 0; }
+            .tache-item { flex-direction: column; align-items: flex-start; padding: 15px; }
+            .tache-header { width: 100%; margin-bottom: 8px; }
+            .tache-actions { width: 100%; text-align: center; padding: 10px 0 0; border-top: 1px solid #eee; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
+    <div class="container">
+        <div class="header">
+            <div style="position: relative; text-align: center; margin-bottom: 15px;">
+                <div style="position: absolute; top: 0; right: 0;">
+                    <div style="background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                        <span style="color: #ffd700; font-size: 1.2em; margin-right: 8px;">👤</span>
+                        <span style="color: white; font-weight: 600; font-size: 1.1em;">{{ session.username }}</span>
+                    </div>
+                </div>
+                <div>
+                    <h1>✅ Tâches OverView</h1>
+                    <p>Gérez vos tâches et projets</p>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('formulaire_tache') }}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 0 10px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">+ Nouvelle Tâche</a>
+                <a href="{{ url_for('parametres') }}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 0 10px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">⚙ Paramètres</a>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="{{ url_for('index') }}" class="nav-tab">Épargne</a>
+            <a href="{{ url_for('taches') }}" class="nav-tab active">Tâches</a>
+            <a href="{{ url_for('calendrier') }}" class="nav-tab">Agenda</a>
+            <a href="{{ url_for('dashboard') }}" class="nav-tab">Dashboard</a>
+            <a href="{{ url_for('notifications') }}" class="nav-tab">Notifications</a>
+            <a href="{{ url_for('rapports') }}" class="nav-tab">Rapports</a>
+        </div>
+
+        <!-- Diagramme circulaire du taux d'achèvement global -->
+        <div class="total-container">
+            <h3>Progression Globale des Tâches</h3>
+            <div class="chart-container">
+                <canvas id="progressChart" width="200" height="200"></canvas>
+                <div class="chart-info">
+                    <div class="chart-percentage">{{ "%.1f"|format(taux_achevement_global) }}%</div>
+                    <div class="chart-label">Taux d'achèvement global</div>
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Tâches Actives -->
+        <h2 class="section-title">Mes Tâches Actives</h2>
+        <ul class="taches-list">
+            {% for tache in taches_actives %}
+            <li class="tache-item">
+                <a href="{{ url_for('tache_detail', tache_id=tache.id) }}" class="main-link">
+                    <div class="tache-header">
+                        <span class="tache-titre">{{ tache.titre }}</span>
+                        <span class="tache-progression-text">{{ "%.1f"|format(tache.progression) }}%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ tache.progression }}%;"></div>
+                    </div>
+                    <small style="color: #666; margin-top: 8px; display: block;">
+                        {{ tache.etapes_terminees }}/{{ tache.total_etapes }} étapes terminées
+                        {% if tache.date_limite %}
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                            <canvas id="urgency-{{ tache.id }}" width="20" height="20" style="border-radius: 50%;"></canvas>
+                            <span id="countdown-{{ tache.id }}" style="color: #e74c3c; font-weight: 600;">⏰ Calcul en cours...</span>
+                        </div>
+                        {% endif %}
+                    </small>
+                </a>
+                <div class="tache-actions">
+                    <form id="form-delete-tache-{{ tache.id }}" action="{{ url_for('supprimer_tache', tache_id=tache.id) }}" method="post">
+                        <button type="button" onclick="confirmerSuppressionTache({{ tache.id }})">Supprimer</button>
+                    </form>
+                </div>
+            </li>
+            {% else %}
+            <li class="tache-item" style="display:block; text-align:center; padding: 20px;">
+                Aucune tâche active. Cliquez sur le '+' pour commencer !
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Tâches Terminées -->
+        {% if taches_terminees %}
+        <h2 class="section-title">Tâches Terminées</h2>
+        <ul class="taches-list">
+            {% for tache in taches_terminees %}
+            <li class="tache-item" style="opacity: 0.7;">
+                <a href="{{ url_for('tache_detail', tache_id=tache.id) }}" class="main-link">
+                    <div class="tache-header">
+                        <span class="tache-titre">{{ tache.titre }}</span>
+                        <span class="tache-progression-text">100%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: 100%; background-color: #28a745;"></div>
+                    </div>
+                    <small style="color: #666; margin-top: 8px; display: block;">
+                        Terminée le {{ tache.date_modification if tache.date_modification else 'N/A' }}
+                        {% if tache.date_limite %}
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                            <canvas id="urgency-terminee-{{ tache.id }}" width="20" height="20" style="border-radius: 50%;"></canvas>
+                            <span id="countdown-terminee-{{ tache.id }}" style="color: #e74c3c; font-weight: 600;">⏰ Calcul en cours...</span>
+                        </div>
+                        {% endif %}
+                    </small>
+                </a>
+                <div class="tache-actions">
+                    <form id="form-delete-tache-terminee-{{ tache.id }}" action="{{ url_for('supprimer_tache', tache_id=tache.id) }}" method="post">
+                        <button type="button" onclick="confirmerSuppressionTache({{ tache.id }})">Supprimer</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+    <script>
+        function confirmerSuppressionTache(tacheId) {
+            const confirmation = confirm("Êtes-vous sûr de vouloir supprimer cette tâche ?");
+            if (confirmation) {
+                const form = document.getElementById('form-delete-tache-' + tacheId) ||
+                           document.getElementById('form-delete-tache-terminee-' + tacheId);
+                form.submit();
+            }
+        }
+
+        // Fonction pour calculer le compte à rebours et l'urgence
+        function updateCountdowns() {
+            const countdownElements = document.querySelectorAll('[id^="countdown-"]');
+
+            countdownElements.forEach(element => {
+                const tacheId = element.id.replace('countdown-', '').replace('-terminee', '');
+                const dateLimite = getDateLimiteForTache(tacheId);
+
+                if (dateLimite) {
+                    const now = new Date();
+                    const deadline = new Date(dateLimite);
+                    const timeDiff = deadline - now;
+
+                    if (timeDiff > 0) {
+                        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+                        let countdownText = '⏰ ';
+                        if (days > 0) {
+                            countdownText += `${days}j ${hours}h`;
+                        } else if (hours > 0) {
+                            countdownText += `${hours}h ${minutes}m`;
+                        } else {
+                            countdownText += `${minutes}m`;
+                        }
+
+                        element.textContent = countdownText;
+
+                        // Mettre à jour le diagramme d'urgence
+                        updateUrgencyChart(tacheId, timeDiff, deadline);
+                    } else {
+                        element.textContent = '⏰ En retard !';
+                        element.style.color = '#e74c3c';
+
+                        // Diagramme rouge pour les tâches en retard
+                        updateUrgencyChart(tacheId, 0, deadline);
+                    }
+                }
+            });
+        }
+
+        // Fonction pour dessiner le diagramme d'urgence
+        function updateUrgencyChart(tacheId, timeDiff, deadline) {
+            const canvas = document.getElementById(`urgency-${tacheId}`) || document.getElementById(`urgency-terminee-${tacheId}`);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 8;
+
+            // Calculer le pourcentage de temps écoulé
+            const totalTime = deadline - new Date(deadline.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 jours avant
+            const elapsedTime = deadline - new Date();
+            const percentage = Math.max(0, Math.min(1, (totalTime - elapsedTime) / totalTime));
+
+            // Déterminer la couleur basée sur l'urgence
+            let color;
+            if (timeDiff <= 0) {
+                color = '#e74c3c'; // Rouge pour en retard
+            } else if (timeDiff <= 24 * 60 * 60 * 1000) { // 1 jour
+                color = '#f39c12'; // Orange
+            } else if (timeDiff <= 3 * 24 * 60 * 60 * 1000) { // 3 jours
+                color = '#f1c40f'; // Jaune
+            } else {
+                color = '#27ae60'; // Vert
+            }
+
+            // Effacer le canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner le cercle de fond
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fill();
+
+            // Dessiner le cercle de progression
+            if (percentage > 0) {
+                const startAngle = -Math.PI / 2;
+                const endAngle = startAngle + (percentage * 2 * Math.PI);
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+        }
+
+        // Fonction pour récupérer la date limite (à adapter selon votre structure de données)
+        function getDateLimiteForTache(tacheId) {
+            // Cette fonction doit être adaptée pour récupérer la date limite depuis les données
+            // Pour l'instant, on utilise les données passées depuis Flask
+            const tachesActives = {{ taches_actives|tojson }};
+            const tachesTerminees = {{ taches_terminees|tojson }};
+            const tache = tachesActives.find(t => t.id == tacheId) || tachesTerminees.find(t => t.id == tacheId);
+            return tache ? tache.date_limite : null;
+        }
+
+        // Dessiner le diagramme circulaire
+        function drawProgressChart() {
+            const canvas = document.getElementById('progressChart');
+            const ctx = canvas.getContext('2d');
+            const percentage = {{ taux_achevement_global }};
+
+            // Dimensions du canvas
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 80;
+
+            // Couleurs
+            const backgroundColor = '#e9ecef';
+            const progressColor = '#667eea';
+
+            // Dessiner le cercle de fond
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = backgroundColor;
+            ctx.fill();
+
+            // Dessiner le cercle de progression
+            if (percentage > 0) {
+                const startAngle = -Math.PI / 2; // Commencer en haut
+                const endAngle = startAngle + (percentage / 100) * 2 * Math.PI;
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = progressColor;
+                ctx.fill();
+            }
+
+            // Dessiner le cercle intérieur pour l'effet donut
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 15, 0, 2 * Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+
+        // Dessiner le diagramme au chargement de la page
+        window.addEventListener('load', function() {
+            drawProgressChart();
+            updateCountdowns();
+
+            // Mettre à jour les compteurs toutes les minutes
+            setInterval(updateCountdowns, 60000);
+        });
+    </script>
+</body>
+</html>

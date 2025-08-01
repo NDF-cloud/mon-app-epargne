@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if objectif %}Modifier l'objectif{% else %}Créer un nouvel objectif{% endif %} - OverView</title>
+    <title>{{ 'Modifier' if tache else 'Créer' }} une Tâche - OverView</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -100,10 +102,8 @@
         }
 
         .form-group input[type="text"],
-        .form-group input[type="number"],
         .form-group input[type="date"],
-        .form-group input[type="password"],
-        .form-group select {
+        .form-group textarea {
             width: 100%;
             padding: 15px 20px;
             border: 2px solid #e9ecef;
@@ -116,20 +116,16 @@
         }
 
         .dark-mode .form-group input[type="text"],
-        .dark-mode .form-group input[type="number"],
         .dark-mode .form-group input[type="date"],
-        .dark-mode .form-group input[type="password"],
-        .dark-mode .form-group select {
+        .dark-mode .form-group textarea {
             background: rgba(45, 45, 45, 0.9);
             color: #e0e0e0;
             border-color: #444;
         }
 
         .form-group input[type="text"]:focus,
-        .form-group input[type="number"]:focus,
         .form-group input[type="date"]:focus,
-        .form-group input[type="password"]:focus,
-        .form-group select:focus {
+        .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -137,12 +133,15 @@
         }
 
         .dark-mode .form-group input[type="text"]:focus,
-        .dark-mode .form-group input[type="number"]:focus,
         .dark-mode .form-group input[type="date"]:focus,
-        .dark-mode .form-group input[type="password"]:focus,
-        .dark-mode .form-group select:focus {
+        .dark-mode .form-group textarea:focus {
             border-color: #76c7c0;
             box-shadow: 0 0 0 3px rgba(118, 199, 192, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
         }
 
         .help-text {
@@ -233,35 +232,6 @@
             border-color: rgba(40, 167, 69, 0.3);
         }
 
-        .password-field {
-            border-top: 2px solid #667eea;
-            padding-top: 20px;
-            margin-top: 25px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            padding: 20px;
-            border-radius: 12px;
-        }
-
-        .dark-mode .password-field {
-            border-color: #76c7c0;
-            background: linear-gradient(135deg, rgba(118, 199, 192, 0.1) 0%, rgba(90, 156, 164, 0.1) 100%);
-        }
-
-        .currency-input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .currency-input-group input {
-            flex: 1;
-        }
-
-        .currency-input-group select {
-            width: auto;
-            min-width: 100px;
-        }
-
         /* Styles Responsive */
         @media (max-width: 768px) {
             .container {
@@ -286,15 +256,6 @@
                 margin-right: 0;
                 margin-bottom: 10px;
             }
-
-            .currency-input-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .currency-input-group select {
-                width: 100%;
-            }
         }
 
         @media (max-width: 480px) {
@@ -303,10 +264,8 @@
             }
 
             .form-group input[type="text"],
-            .form-group input[type="number"],
             .form-group input[type="date"],
-            .form-group input[type="password"],
-            .form-group select {
+            .form-group textarea {
                 padding: 12px 16px;
                 font-size: 16px;
             }
@@ -319,10 +278,10 @@
     </script>
     <div class="container">
         <div class="header">
-            <h1>💰 {% if objectif %}Modifier l'objectif{% else %}Créer un nouvel objectif{% endif %}</h1>
-            <p>Gérez vos objectifs d'épargne</p>
+            <h1>✅ {{ 'Modifier' if tache else 'Créer' }} une Tâche</h1>
+            <p>Gérez vos tâches et projets</p>
             <div style="margin-top: 15px;">
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <a href="{{ url_for('taches') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Retour
                 </a>
             </div>
@@ -339,32 +298,21 @@
         {% endwith %}
 
         <div class="form-container">
-            <form action="{{ url_for('sauvegarder_objectif', objectif_id=objectif.id if objectif else None) }}" method="post">
+            <form method="post" action="{{ url_for('sauvegarder_tache', tache_id=tache.id if tache else None) }}">
                 <div class="form-group">
-                    <label for="nom">
-                        <i class="fas fa-bullseye"></i> Nom de l'objectif *
+                    <label for="titre">
+                        <i class="fas fa-tasks"></i> Titre de la tâche *
                     </label>
-                    <input type="text" id="nom" name="nom" value="{{ objectif.nom if objectif else '' }}" required
-                           placeholder="Ex: Vacances d'été, Voiture, etc.">
+                    <input type="text" id="titre" name="titre" value="{{ tache.titre if tache else '' }}" required
+                           placeholder="Entrez le titre de votre tâche">
                 </div>
 
                 <div class="form-group">
-                    <label for="montant_cible">
-                        <i class="fas fa-coins"></i> Montant cible *
+                    <label for="description">
+                        <i class="fas fa-align-left"></i> Description (optionnel)
                     </label>
-                    <div class="currency-input-group">
-                        <input type="number" id="montant_cible" name="montant_cible"
-                               value="{{ objectif.montant_cible if objectif else '' }}" required
-                               placeholder="0.00" step="0.01" min="0">
-                        <select name="devise_cible" id="devise-cible-select">
-                            {% for code, nom in get_all_currencies().items() %}
-                            <option value="{{ code }}" {% if code == session.get('default_currency', 'XAF') %}selected{% endif %}>{{ code }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="help-text">
-                        <i class="fas fa-info-circle"></i> Le montant sera automatiquement converti vers votre devise système ({{ get_currency_symbol() }}) si différent
-                    </div>
+                    <textarea id="description" name="description"
+                              placeholder="Décrivez votre tâche en détail...">{{ tache.description if tache else '' }}</textarea>
                 </div>
 
                 <div class="form-group">
@@ -372,26 +320,29 @@
                         <i class="fas fa-calendar-alt"></i> Date limite (optionnel)
                     </label>
                     <input type="date" id="date_limite" name="date_limite"
-                           value="{{ objectif.date_limite if objectif else '' }}"
-                           placeholder="Date limite pour atteindre l'objectif">
+                           value="{{ tache.date_limite if tache and tache.date_limite else '' }}">
+                    <div class="help-text">
+                        <i class="fas fa-info-circle"></i> Définissez une date limite pour cette tâche si nécessaire.
+                    </div>
                 </div>
 
-                <div class="password-field">
-                    <div class="form-group">
-                        <label for="password">
-                            <i class="fas fa-lock"></i> Confirmez avec votre mot de passe *
-                        </label>
-                        <input type="password" name="password" id="password" required
-                               placeholder="Entrez votre mot de passe">
+                <div class="form-group">
+                    <label for="etapes">
+                        <i class="fas fa-list-ol"></i> Étapes de la tâche *
+                    </label>
+                    <textarea id="etapes" name="etapes"
+                              placeholder="Entrez chaque étape sur une nouvelle ligne&#10;Exemple :&#10;Préparer la farine&#10;Faire la pâte&#10;Mettre dans le moule&#10;Mettre au four" required>{% if etapes %}{% for etape in etapes %}{{ etape.description }}{% if not loop.last %}&#10;{% endif %}{% endfor %}{% endif %}</textarea>
+                    <div class="help-text">
+                        <i class="fas fa-info-circle"></i> Entrez chaque étape sur une nouvelle ligne. L'ordre des étapes sera respecté.
                     </div>
                 </div>
 
                 <div style="margin-top: 30px; text-align: center;">
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('taches') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Annuler
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Sauvegarder
+                        <i class="fas fa-save"></i> {{ 'Modifier' if tache else 'Créer' }} la tâche
                     </button>
                 </div>
             </form>

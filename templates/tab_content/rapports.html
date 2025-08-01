@@ -1,0 +1,215 @@
+<!-- Contenu de l'onglet Rapports -->
+<div class="tab-content active">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Rapports et Statistiques</h2>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-piggy-bank fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Total Objectifs</h5>
+                    <h3 class="text-primary">{{ stats.total_objectifs }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-coins fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Épargne Actuelle</h5>
+                    <h3 class="text-success">{{ format_currency(stats.epargne_actuelle) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-tasks fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Total Tâches</h5>
+                    <h3 class="text-warning">{{ stats.total_taches }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-percentage fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title">Taux de Réussite</h5>
+                    <h3 class="text-info">{{ stats.taux_reussite }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques détaillés -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Évolution de l'Épargne</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="evolutionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Performance des Tâches</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau de données -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Résumé Mensuel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mois</th>
+                                    <th>Objectifs Créés</th>
+                                    <th>Épargne Totale</th>
+                                    <th>Tâches Créées</th>
+                                    <th>Tâches Terminées</th>
+                                    <th>Taux de Réussite</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Décembre 2024</td>
+                                    <td>{{ stats.total_objectifs }}</td>
+                                    <td>{{ format_currency(stats.epargne_actuelle) }}</td>
+                                    <td>{{ stats.total_taches }}</td>
+                                    <td>{{ (stats.total_taches * stats.taux_reussite / 100) | round | int }}</td>
+                                    <td>
+                                        <span class="badge {% if stats.taux_reussite >= 80 %}bg-success{% elif stats.taux_reussite >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ stats.taux_reussite }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions d'export -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Exporter les Données</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="fas fa-file-pdf mb-2"></i><br>
+                                Export PDF
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-success w-100">
+                                <i class="fas fa-file-excel mb-2"></i><br>
+                                Export Excel
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-info w-100">
+                                <i class="fas fa-chart-bar mb-2"></i><br>
+                                Graphiques
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-warning w-100">
+                                <i class="fas fa-print mb-2"></i><br>
+                                Imprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Graphique d'évolution de l'épargne
+const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+new Chart(evolutionCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+        datasets: [{
+            label: 'Épargne (XAF)',
+            data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {{ stats.epargne_actuelle }}],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Graphique de performance des tâches
+const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+new Chart(performanceCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Terminées', 'En cours'],
+        datasets: [{
+            data: [{{ (stats.total_taches * stats.taux_reussite / 100) | round | int }}, {{ stats.total_taches - (stats.total_taches * stats.taux_reussite / 100) | round | int }}],
+            backgroundColor: ['#28a745', '#ffc107'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>

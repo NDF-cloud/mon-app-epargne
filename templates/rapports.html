@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapports - OverView</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .report-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-card h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .performance-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .performance-excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .performance-good {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .performance-average {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .performance-poor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .export-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .nav-tab {
+                flex: 1 1 calc(50% - 10px);
+                margin: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="position: relative; text-align: center; margin-bottom: 15px;">
+                <div style="position: absolute; top: 0; right: 0;">
+                    <div style="background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                        <span style="color: #ffd700; font-size: 1.2em; margin-right: 8px;">👤</span>
+                        <span style="color: white; font-weight: 600; font-size: 1.1em;">{{ session.username }}</span>
+                    </div>
+                </div>
+                <div>
+                    <h1>📊 Rapports OverView</h1>
+                    <p>Analyses détaillées de vos performances</p>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('parametres') }}" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; margin: 0 10px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">⚙ Paramètres</a>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <a href="{{ url_for('index') }}" class="nav-tab">Épargne</a>
+            <a href="{{ url_for('taches') }}" class="nav-tab">Tâches</a>
+            <a href="{{ url_for('calendrier') }}" class="nav-tab">Agenda</a>
+            <a href="{{ url_for('dashboard') }}" class="nav-tab">Dashboard</a>
+            <a href="{{ url_for('notifications') }}" class="nav-tab">Notifications</a>
+            <a href="{{ url_for('rapports') }}" class="nav-tab active">Rapports</a>
+        </div>
+
+        <!-- Résumé des statistiques -->
+        <div class="stats-summary">
+            <div class="stat-item">
+                <div class="stat-number">
+                    {{ stats.total_objectifs }}
+                </div>
+                <div class="stat-label">Objectifs d'épargne totaux</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {{ format_currency(stats.epargne_actuelle) }}
+                </div>
+                <div class="stat-label">Épargne actuelle</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {{ stats.total_taches }}
+                </div>
+                <div class="stat-label">Tâches créées</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {{ stats.taux_reussite }}%
+                </div>
+                <div class="stat-label">Taux de réussite moyen</div>
+            </div>
+        </div>
+
+        <!-- Graphiques et analyses -->
+        <div class="reports-grid">
+            <div class="report-card">
+                <h3>💰 Évolution de l'Épargne</h3>
+                <div class="chart-container">
+                    <canvas id="epargneChart"></canvas>
+                </div>
+            </div>
+
+            <div class="report-card">
+                <h3>✅ Performance des Tâches</h3>
+                <div class="chart-container">
+                    <canvas id="tachesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableaux détaillés -->
+        <div class="reports-grid">
+            <div class="report-card">
+                <h3>📈 Statistiques Mensuelles - Épargne</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mois</th>
+                            <th>Objectifs</th>
+                            <th>Total Objectifs (€)</th>
+                            <th>Total Actuel (€)</th>
+                            <th>Progression</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in stats.evolution_mensuelle %}
+                        <tr>
+                            <td>{{ stat.mois }}</td>
+                            <td>1</td>
+                            <td>{{ format_currency(stat.total) }}</td>
+                            <td>{{ format_currency(stat.total) }}</td>
+                            <td>
+                                <span class="performance-indicator performance-good">
+                                    100%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="report-card">
+                <h3>⚡ Performance des Tâches</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mois</th>
+                            <th>Tâches Créées</th>
+                            <th>Tâches Terminées</th>
+                            <th>Taux de Réussite</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for perf in stats.performance_taches %}
+                        <tr>
+                            <td>{{ perf.mois }}</td>
+                            <td>{{ perf.total }}</td>
+                            <td>{{ perf.terminees }}</td>
+                            <td>{{ "%.1f"|format((perf.terminees * 100 / perf.total) if perf.total > 0 else 0) }}%</td>
+                            <td>
+                                {% set taux = (perf.terminees * 100 / perf.total) if perf.total > 0 else 0 %}
+                                <span class="performance-indicator
+                                    {% if taux >= 90 %}performance-excellent
+                                    {% elif taux >= 70 %}performance-good
+                                    {% elif taux >= 50 %}performance-average
+                                    {% else %}performance-poor{% endif %}">
+                                    {% if taux >= 90 %}Excellent
+                                    {% elif taux >= 70 %}Bon
+                                    {% elif taux >= 50 %}Moyen
+                                    {% else %}À améliorer{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section d'export -->
+        <div class="export-section">
+            <h3>📤 Export des Rapports</h3>
+            <p>Téléchargez vos rapports au format PDF ou Excel pour les partager ou les archiver.</p>
+            <div class="export-buttons">
+                <button class="btn btn-primary">📄 Exporter en PDF</button>
+                <button class="btn btn-success">📊 Exporter en Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Graphique d'évolution de l'épargne
+        const epargneCtx = document.getElementById('epargneChart').getContext('2d');
+        new Chart(epargneCtx, {
+            type: 'line',
+            data: {
+                labels: {{ stats.evolution_mensuelle | map(attribute='mois') | list | tojson }},
+                datasets: [{
+                    label: 'Épargne ({{ get_currency_symbol() }})',
+                    data: {{ stats.evolution_mensuelle | map(attribute='total') | list | tojson }},
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Graphique de performance des tâches
+        const tachesCtx = document.getElementById('tachesChart').getContext('2d');
+        new Chart(tachesCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ stats.performance_taches | map(attribute='mois') | list | tojson }},
+                datasets: [{
+                    label: 'Tâches Terminées',
+                    data: {{ stats.performance_taches | map(attribute='terminees') | list | tojson }},
+                    backgroundColor: [
+                        '#28a745',
+                        '#20c997',
+                        '#17a2b8',
+                        '#6f42c1',
+                        '#e83e8c',
+                        '#fd7e14'
+                    ],
+                    borderColor: '#667eea',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

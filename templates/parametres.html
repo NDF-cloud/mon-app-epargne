@@ -4,35 +4,306 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- NOUVEAU : Balise Viewport -->
-    <title>Paramètres</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres - OverView</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 20px; transition: background-color 0.3s, color 0.3s; margin: 0; }
-        .container { width: 100%; max-width: 600px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 30px; }
-        h1, h2 { color: #005f73; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-        .param-section { margin-top: 30px; }
-        form div { margin-bottom: 15px; }
-        form label { display: block; margin-bottom: 5px; font-weight: bold; }
-        form input { display: block; width: 300px; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; } /* Largeur fixe pour les champs de formulaire */
-        form button { padding: 10px 15px; margin-top: 10px; cursor: pointer; background-color: #006d77; color: white; border: none; border-radius: 5px; }
-        .flash-messages { margin-bottom: 15px; text-align: center; }
-        .alert-error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; }
-        .alert-success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; }
-        .logout-link { display: block; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
-        .back-link { display: block; margin-bottom: 20px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
 
-        /* Styles pour le Mode Nuit */
-        body.dark-mode { background-color: #121212; color: #e0e0e0; }
-        .dark-mode .container { background-color: #1e1e1e; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-        .dark-mode h1, .dark-mode h2 { color: #76c7c0; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-        /* Styles Responsive */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .settings-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .param-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .param-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .param-section h2 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4c63d2;
+            box-shadow: 0 0 0 3px rgba(76,99,210,0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.9);
+            cursor: pointer;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108,117,125,0.3);
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background-color: #fee;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert-success {
+            background-color: #f0fff4;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .logout-section {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .logout-link {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .logout-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+        }
+
+        /* Mode sombre */
+        body.dark-mode {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #e0e0e0;
+        }
+
+        .dark-mode .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .dark-mode .settings-container {
+            background: rgba(30,30,30,0.95);
+        }
+
+        .dark-mode .param-section h2 {
+            color: #76c7c0;
+        }
+
+        .dark-mode .form-group label {
+            color: #76c7c0;
+        }
+
+        .dark-mode .form-group input {
+            background: rgba(45,45,45,0.9);
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .dark-mode .form-group input:focus,
+        .dark-mode .form-group select:focus {
+            border-color: #76c7c0;
+            box-shadow: 0 0 0 3px rgba(118,199,192,0.1);
+        }
+
+        .dark-mode .form-group select {
+            background: rgba(45,45,45,0.9);
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .dark-mode .form-group small {
+            color: #aaa;
+        }
+
+        .dark-mode .btn-primary {
+            background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+            box-shadow: 0 4px 15px rgba(118,199,192,0.3);
+        }
+
+        .dark-mode .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .dark-mode .alert-error {
+            background-color: rgba(197,48,48,0.1);
+            color: #feb2b2;
+            border-color: #c53030;
+        }
+
+        .dark-mode .alert-success {
+            background-color: rgba(47,133,90,0.1);
+            color: #9ae6b4;
+            border-color: #2f855a;
+        }
+
+        .dark-mode .logout-link {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        /* Responsive */
         @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 20px; margin-top: 20px; }
-            h1 { font-size: 1.8em; }
-            form input { width: 100%; } /* Champs de formulaire prennent toute la largeur sur mobile */
-            form button { width: 100%; }
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 0;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .settings-container {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -40,7 +311,12 @@
     <script> if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); </script>
     <div class="container">
         <a href="{{ url_for('index') }}" class="back-link">← Retour à l'accueil</a>
-        <h1>Paramètres</h1>
+
+        <div class="header">
+            <h1>⚙️ Paramètres</h1>
+            <p>Gérez vos préférences OverView</p>
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="flash-messages">
@@ -50,31 +326,138 @@
             </div>
           {% endif %}
         {% endwith %}
+
+        <div class="settings-container">
+            <!-- CATÉGORIE : SÉCURITÉ -->
         <div class="param-section">
-            <h2>Thème</h2>
-            <button id="theme-toggle">Activer le Mode Nuit</button>
-        </div>
-        <div class="param-section">
-            <h2>Changer mon Mot de Passe</h2>
+                <h2>🔐 Sécurité</h2>
             <form action="{{ url_for('update_password') }}" method="post">
-                <div>
+                    <div class="form-group">
                     <label for="ancien_mdp">Ancien Mot de Passe</label>
                     <input type="password" name="ancien_mdp" id="ancien_mdp" required>
                 </div>
-                <div>
+                    <div class="form-group">
                     <label for="nouveau_mdp">Nouveau Mot de Passe</label>
                     <input type="password" name="nouveau_mdp" id="nouveau_mdp" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Mettre à jour</button>
+                </form>
+            </div>
+
+            <!-- CATÉGORIE : PERSONNALISATION -->
+            <div class="param-section">
+                <h2>🎨 Personnalisation</h2>
+                <div class="form-group">
+                    <label>Mode d'affichage</label>
+                    <button id="theme-toggle" class="btn-secondary">Activer le Mode Nuit</button>
+                    <small>Changer le thème de l'interface</small>
                 </div>
-                <button type="submit">Mettre à jour</button>
+
+                <form action="{{ url_for('update_display_settings') }}" method="post">
+                    <div class="form-group">
+                        <label for="default_currency">Devise par défaut</label>
+                        <select name="default_currency" id="default_currency">
+                            <option value="XAF" {% if session.get('default_currency', 'XAF') == 'XAF' %}selected{% endif %}>XAF (Franc CFA)</option>
+                            <option value="EUR" {% if session.get('default_currency') == 'EUR' %}selected{% endif %}>EUR (Euro)</option>
+                            <option value="USD" {% if session.get('default_currency') == 'USD' %}selected{% endif %}>USD (Dollar US)</option>
+                        </select>
+                        <small>Devise utilisée pour l'affichage des montants dans toute l'application</small>
+                    </div>
+                    <button type="submit" class="btn-primary">Sauvegarder</button>
+                </form>
+            </div>
+
+            <!-- CATÉGORIE : COMPTE À REBOURS -->
+            <div class="param-section">
+                <h2>⏰ Compte à Rebours</h2>
+                <form action="{{ url_for('update_countdown_settings') }}" method="post">
+                    <div class="form-group">
+                        <label for="countdown_update_interval">Intervalle de mise à jour (secondes)</label>
+                        <input type="number" name="countdown_update_interval" id="countdown_update_interval" value="{{ session.get('countdown_update_interval', 60) }}" min="30" max="300" required>
+                        <small>Fréquence de mise à jour des compteurs à rebours (30-300 secondes)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="countdown_warning_days">Jours d'avertissement</label>
+                        <input type="number" name="countdown_warning_days" id="countdown_warning_days" value="{{ session.get('countdown_warning_days', 3) }}" min="1" max="7" required>
+                        <small>Nombre de jours avant la date limite pour afficher l'alerte orange</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="show_countdown_on_list">Afficher les compteurs à rebours</label>
+                        <select name="show_countdown_on_list" id="show_countdown_on_list">
+                            <option value="true" {% if session.get('show_countdown_on_list', True) %}selected{% endif %}>Oui</option>
+                            <option value="false" {% if not session.get('show_countdown_on_list', True) %}selected{% endif %}>Non</option>
+                        </select>
+                        <small>Afficher les compteurs à rebours sur les pages principales</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="show_urgency_charts">Afficher les diagrammes d'urgence</label>
+                        <select name="show_urgency_charts" id="show_urgency_charts">
+                            <option value="true" {% if session.get('show_urgency_charts', True) %}selected{% endif %}>Oui</option>
+                            <option value="false" {% if not session.get('show_urgency_charts', True) %}selected{% endif %}>Non</option>
+                        </select>
+                        <small>Afficher les petits diagrammes circulaires d'urgence</small>
+                    </div>
+                    <button type="submit" class="btn-primary">Sauvegarder</button>
+                </form>
+            </div>
+
+            <!-- CATÉGORIE : NOTIFICATIONS -->
+            <div class="param-section">
+                <h2>🔔 Notifications</h2>
+                <form action="{{ url_for('update_notification_settings') }}" method="post">
+                    <div class="form-group">
+                        <label for="email_notifications">Notifications par email</label>
+                        <select name="email_notifications" id="email_notifications">
+                            <option value="true" {% if session.get('email_notifications', True) %}selected{% endif %}>Activées</option>
+                            <option value="false" {% if not session.get('email_notifications', True) %}selected{% endif %}>Désactivées</option>
+                        </select>
+                        <small>Recevoir des notifications par email pour les échéances</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="notification_advance_days">Alerte avancée (jours)</label>
+                        <input type="number" name="notification_advance_days" id="notification_advance_days" value="{{ session.get('notification_advance_days', 1) }}" min="0" max="7" required>
+                        <small>Nombre de jours avant l'échéance pour recevoir une notification</small>
+                    </div>
+                    <button type="submit" class="btn-primary">Sauvegarder</button>
+                </form>
+            </div>
+
+            <!-- CATÉGORIE : GESTION DES DONNÉES -->
+            <div class="param-section">
+                <h2>🗑️ Gestion des Données</h2>
+                <form action="{{ url_for('update_deletion_settings') }}" method="post">
+                    <div class="form-group">
+                        <label for="auto_archive_completed">Archiver automatiquement</label>
+                        <select name="auto_archive_completed" id="auto_archive_completed">
+                            <option value="true" {% if session.get('auto_archive_completed', True) %}selected{% endif %}>Oui</option>
+                            <option value="false" {% if not session.get('auto_archive_completed', True) %}selected{% endif %}>Non</option>
+                        </select>
+                        <small>Archiver automatiquement les objectifs et tâches terminés</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_deletions">Confirmation de suppression</label>
+                        <select name="confirm_deletions" id="confirm_deletions">
+                            <option value="true" {% if session.get('confirm_deletions', True) %}selected{% endif %}>Demander confirmation</option>
+                            <option value="false" {% if not session.get('confirm_deletions', True) %}selected{% endif %}>Suppression directe</option>
+                        </select>
+                        <small>Demander une confirmation avant de supprimer des éléments</small>
+                    </div>
+                    <button type="submit" class="btn-primary">Sauvegarder</button>
             </form>
         </div>
-        <div class="logout-link">
-            <a href="{{ url_for('logout') }}">Se déconnecter</a>
+
+            <div class="logout-section">
+                <a href="{{ url_for('logout') }}" class="logout-link">🚪 Se déconnecter</a>
+            </div>
         </div>
     </div>
+
     <script>
         const themeToggle = document.getElementById('theme-toggle');
-        if (document.body.classList.contains('dark-mode')) { themeToggle.textContent = 'Désactiver le Mode Nuit'; }
+        if (document.body.classList.contains('dark-mode')) {
+            themeToggle.textContent = 'Désactiver le Mode Nuit';
+        }
+
         themeToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';

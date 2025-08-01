@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if evenement %}Modifier{% else %}Ajouter{% endif %} un événement - OverView</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Mode sombre */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .dark-mode .header {
+            background-color: rgba(30, 30, 30, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .dark-mode .header h1 {
+            color: #76c7c0;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .dark-mode .header p {
+            color: #ccc;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .dark-mode .form-container {
+            background-color: rgba(30, 30, 30, 0.95);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .dark-mode .form-group label {
+            color: #76c7c0;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: inherit;
+        }
+
+        .dark-mode .form-group input[type="text"],
+        .dark-mode .form-group input[type="date"],
+        .dark-mode .form-group input[type="time"],
+        .dark-mode .form-group textarea,
+        .dark-mode .form-group select {
+            background: rgba(45, 45, 45, 0.9);
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group input[type="time"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .dark-mode .form-group input[type="text"]:focus,
+        .dark-mode .form-group input[type="date"]:focus,
+        .dark-mode .form-group input[type="time"]:focus,
+        .dark-mode .form-group textarea:focus,
+        .dark-mode .form-group select:focus {
+            border-color: #76c7c0;
+            box-shadow: 0 0 0 3px rgba(118, 199, 192, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .dark-mode .help-text {
+            color: #aaa;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin-right: 15px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .dark-mode .btn-primary {
+            background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+            box-shadow: 0 4px 15px rgba(118, 199, 192, 0.3);
+        }
+
+        .dark-mode .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(118, 199, 192, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .flash-messages {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .alert-error {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+
+        .dark-mode .alert-error {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-color: rgba(220, 53, 69, 0.3);
+        }
+
+        .dark-mode .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border-color: rgba(40, 167, 69, 0.3);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-option.selected {
+            border-color: #333;
+            transform: scale(1.2);
+        }
+
+        .dark-mode .color-option.selected {
+            border-color: #76c7c0;
+        }
+
+        /* Styles Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .form-group input[type="text"],
+            .form-group input[type="date"],
+            .form-group input[type="time"],
+            .form-group textarea,
+            .form-group select {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+
+            .color-picker {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    </script>
+    <div class="container">
+        <div class="header">
+            <h1>📅 {% if evenement %}Modifier{% else %}Ajouter{% endif %} un événement</h1>
+            <p>Gérez vos événements et rendez-vous</p>
+            <div style="margin-top: 15px;">
+                <a href="{{ url_for('calendrier') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="post" action="{{ url_for('sauvegarder_evenement', evenement_id=evenement.id if evenement else None) }}">
+                <div class="form-group">
+                    <label for="titre">
+                        <i class="fas fa-calendar-plus"></i> Titre de l'événement *
+                    </label>
+                    <input type="text" id="titre" name="titre" value="{{ evenement.titre if evenement else '' }}" required
+                           placeholder="Ex: Réunion équipe, Rendez-vous médical...">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">
+                        <i class="fas fa-align-left"></i> Description (optionnel)
+                    </label>
+                    <textarea id="description" name="description" rows="3"
+                              placeholder="Description détaillée de l'événement...">{{ evenement.description if evenement else '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_debut">
+                            <i class="fas fa-calendar-alt"></i> Date de début *
+                        </label>
+                        <input type="date" id="date_debut" name="date_debut" value="{{ evenement.date_debut if evenement else '' }}" required>
+                        <div class="help-text">
+                            <i class="fas fa-info-circle"></i> Sélectionnez la date de début de l'événement
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_fin">
+                            <i class="fas fa-calendar-check"></i> Date de fin (optionnel)
+                        </label>
+                        <input type="date" id="date_fin" name="date_fin" value="{{ evenement.date_fin if evenement else '' }}">
+                        <div class="help-text">
+                            <i class="fas fa-info-circle"></i> Laissez vide pour un événement d'une journée
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="heure_debut">
+                            <i class="fas fa-clock"></i> Heure de début (optionnel)
+                        </label>
+                        <input type="time" id="heure_debut" name="heure_debut" value="{{ evenement.heure_debut if evenement else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="heure_fin">
+                            <i class="fas fa-clock"></i> Heure de fin (optionnel)
+                        </label>
+                        <input type="time" id="heure_fin" name="heure_fin" value="{{ evenement.heure_fin if evenement else '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lieu">
+                        <i class="fas fa-map-marker-alt"></i> Lieu (optionnel)
+                    </label>
+                    <input type="text" id="lieu" name="lieu" value="{{ evenement.lieu if evenement else '' }}"
+                           placeholder="Adresse, salle, lieu de rendez-vous...">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-palette"></i> Couleur de l'événement
+                    </label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background-color: #fd7e14;" data-color="#fd7e14"></div>
+                        <div class="color-option" style="background-color: #28a745;" data-color="#28a745"></div>
+                        <div class="color-option" style="background-color: #dc3545;" data-color="#dc3545"></div>
+                        <div class="color-option" style="background-color: #ffc107;" data-color="#ffc107"></div>
+                        <div class="color-option" style="background-color: #17a2b8;" data-color="#17a2b8"></div>
+                        <div class="color-option" style="background-color: #6f42c1;" data-color="#6f42c1"></div>
+                        <div class="color-option" style="background-color: #006d77;" data-color="#006d77"></div>
+                        <div class="color-option" style="background-color: #e83e8c;" data-color="#e83e8c"></div>
+                    </div>
+                    <input type="hidden" id="couleur" name="couleur" value="{{ evenement.couleur if evenement else '#fd7e14' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="rappel_minutes">
+                        <i class="fas fa-bell"></i> Rappel (optionnel)
+                    </label>
+                    <select id="rappel_minutes" name="rappel_minutes">
+                        <option value="0" {% if not evenement or evenement.rappel_minutes == 0 %}selected{% endif %}>Aucun rappel</option>
+                        <option value="5" {% if evenement and evenement.rappel_minutes == 5 %}selected{% endif %}>5 minutes avant</option>
+                        <option value="15" {% if evenement and evenement.rappel_minutes == 15 %}selected{% endif %}>15 minutes avant</option>
+                        <option value="30" {% if evenement and evenement.rappel_minutes == 30 %}selected{% endif %}>30 minutes avant</option>
+                        <option value="60" {% if evenement and evenement.rappel_minutes == 60 %}selected{% endif %}>1 heure avant</option>
+                        <option value="1440" {% if evenement and evenement.rappel_minutes == 1440 %}selected{% endif %}>1 jour avant</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{{ url_for('calendrier') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% if evenement %}Mettre à jour{% else %}Créer{% endif %} l'événement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Gestion du sélecteur de couleur
+        const colorOptions = document.querySelectorAll('.color-option');
+        const colorInput = document.getElementById('couleur');
+
+        // Initialiser la couleur sélectionnée
+        const currentColor = colorInput.value || '#fd7e14';
+        colorOptions.forEach(option => {
+            if (option.dataset.color === currentColor) {
+                option.classList.add('selected');
+            } else {
+                option.classList.remove('selected');
+            }
+        });
+
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                colorOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                colorInput.value = option.dataset.color;
+            });
+        });
+
+        // Amélioration des champs de date
+        const dateDebut = document.getElementById('date_debut');
+        const dateFin = document.getElementById('date_fin');
+
+        // Définir la date minimale à aujourd'hui
+        const today = new Date().toISOString().split('T')[0];
+        dateDebut.min = today;
+        dateFin.min = today;
+
+        // Synchroniser la date de fin avec la date de début
+        dateDebut.addEventListener('change', () => {
+            if (dateDebut.value) {
+                dateFin.min = dateDebut.value;
+                if (dateFin.value && dateFin.value < dateDebut.value) {
+                    dateFin.value = dateDebut.value;
+                }
+            }
+        });
+
+        // Validation de la date de fin
+        dateFin.addEventListener('change', () => {
+            if (dateFin.value && dateDebut.value && dateFin.value < dateDebut.value) {
+                alert('La date de fin ne peut pas être antérieure à la date de début.');
+                dateFin.value = dateDebut.value;
+            }
+        });
+
+        // Fonction pour récupérer les paramètres de l'URL
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        // Pré-remplir la date si elle est passée en paramètre
+        const dateParam = getUrlParameter('date');
+        if (dateParam) {
+            dateDebut.value = dateParam;
+        }
+    </script>
+</body>
+</html>

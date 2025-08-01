@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Détail de la Tâche - OverView</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .nav-tabs {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            padding: 12px 20px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .flash-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #feb2b2;
+        }
+
+        .task-detail {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .task-detail:hover {
+            transform: translateY(-2px);
+        }
+
+        .task-header {
+            margin-bottom: 25px;
+        }
+
+        .task-title {
+            font-size: 28px;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .task-description {
+            color: #4a5568;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .task-progress {
+            margin-bottom: 25px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-text {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .progress-percentage {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .steps-section h3 {
+            color: #2d3748;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .step-item:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .step-item.completed {
+            background: #c6f6d5;
+            border-color: #9ae6b4;
+        }
+
+        .step-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .step-description {
+            flex: 1;
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .step-item.completed .step-description {
+            text-decoration: line-through;
+            color: #4a5568;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .step-item.completed .step-number {
+            background: #48bb78;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .task-detail {
+                padding: 20px;
+            }
+
+            .task-title {
+                font-size: 24px;
+            }
+
+            .step-item {
+                padding: 12px;
+            }
+
+            .step-description {
+                font-size: 14px;
+            }
+        }
+
+        /* Styles pour les confettis */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            animation: confetti-fall 3s linear forwards;
+            z-index: 1000;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(1080deg);
+                opacity: 0;
+            }
+        }
+
+        .celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 999;
+            pointer-events: none;
+            animation: celebration-fade 4s ease-out forwards;
+        }
+
+        @keyframes celebration-fade {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Détail de la Tâche</h1>
+            <p>Gérez vos tâches et projets</p>
+        </div>
+
+        <div style="text-align: right; margin-bottom: 20px;">
+            <a href="{{ url_for('taches') }}" style="display: inline-block; background: rgba(255, 255, 255, 0.2); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.3s ease; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">← Retour</a>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active">Tâches</div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="task-detail">
+            <div class="task-header">
+                <h2 class="task-title">{{ tache.titre }}</h2>
+                {% if tache.description %}
+                    <p class="task-description">{{ tache.description }}</p>
+                {% endif %}
+                {% if tache.date_limite %}
+                    <div class="task-deadline">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <canvas id="urgency-detail" width="30" height="30" style="border-radius: 50%;"></canvas>
+                            <span id="countdown-detail" style="color: #e74c3c; font-weight: 600; font-size: 1.1em;">⏰ Calcul en cours...</span>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="task-progress">
+                <div class="progress-info">
+                    <span class="progress-text">Progression</span>
+                    <span class="progress-percentage">{{ progression }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ progression }}%"></div>
+                </div>
+            </div>
+
+            <div class="steps-section">
+                <h3>Étapes ({{ etapes|length }})</h3>
+                {% for etape in etapes %}
+                    <div class="step-item {% if etape.terminee %}completed{% endif %}" data-etape-id="{{ etape.id }}">
+                        <div class="step-number">{{ loop.index }}</div>
+                        <input type="checkbox"
+                               class="step-checkbox"
+                               {% if etape.terminee %}checked{% endif %}
+                               onchange="toggleEtape({{ tache.id }}, {{ etape.id }}, this)">
+                        <span class="step-description">{{ etape.description }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleEtape(tacheId, etapeId, checkbox) {
+            fetch(`/tache/${tacheId}/toggle_etape/${etapeId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const stepItem = checkbox.closest('.step-item');
+                    const stepDescription = stepItem.querySelector('.step-description');
+
+                    if (checkbox.checked) {
+                        stepItem.classList.add('completed');
+                        stepDescription.style.textDecoration = 'line-through';
+                        stepDescription.style.color = '#4a5568';
+                    } else {
+                        stepItem.classList.remove('completed');
+                        stepDescription.style.textDecoration = 'none';
+                        stepDescription.style.color = '#2d3748';
+                    }
+
+                    // Mettre à jour la progression si elle est fournie
+                    if (data.progression !== undefined) {
+                        const progressPercentage = document.querySelector('.progress-percentage');
+                        const progressFill = document.querySelector('.progress-fill');
+
+                        progressPercentage.textContent = data.progression + '%';
+                        progressFill.style.width = data.progression + '%';
+                    }
+                } else {
+                    // Remettre la checkbox dans son état précédent en cas d'erreur
+                    checkbox.checked = !checkbox.checked;
+                    alert('Erreur lors de la mise à jour de l\'étape');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                checkbox.checked = !checkbox.checked;
+                alert('Erreur lors de la mise à jour de l\'étape');
+            });
+        }
+
+                // Fonction pour créer des confettis
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'];
+            const confettiCount = 300;
+
+            // Créer l'overlay de célébration
+            const overlay = document.createElement('div');
+            overlay.className = 'celebration-overlay';
+            document.body.appendChild(overlay);
+
+            // Créer les confettis
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 1 + 's';
+                    confetti.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
+                    document.body.appendChild(confetti);
+
+                    // Supprimer le confetti après l'animation
+                    setTimeout(() => {
+                        if (confetti.parentNode) {
+                            confetti.parentNode.removeChild(confetti);
+                        }
+                    }, 3000);
+                }, i * 10);
+            }
+
+            // Supprimer l'overlay après l'animation
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 3000);
+        }
+
+        // Fonction pour calculer le compte à rebours et l'urgence
+        function updateCountdown() {
+            const countdownElement = document.getElementById('countdown-detail');
+            if (!countdownElement) return;
+
+            const dateLimite = '{{ tache.date_limite }}';
+            if (!dateLimite) return;
+
+            const now = new Date();
+            const deadline = new Date(dateLimite);
+            const timeDiff = deadline - now;
+
+            if (timeDiff > 0) {
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+                let countdownText = '⏰ ';
+                if (days > 0) {
+                    countdownText += `${days}j ${hours}h`;
+                } else if (hours > 0) {
+                    countdownText += `${hours}h ${minutes}m`;
+                } else {
+                    countdownText += `${minutes}m`;
+                }
+
+                countdownElement.textContent = countdownText;
+
+                // Mettre à jour le diagramme d'urgence
+                updateUrgencyChartDetail(timeDiff, deadline);
+            } else {
+                countdownElement.textContent = '⏰ En retard !';
+                countdownElement.style.color = '#e74c3c';
+
+                // Diagramme rouge pour les tâches en retard
+                updateUrgencyChartDetail(0, deadline);
+            }
+        }
+
+        // Fonction pour dessiner le diagramme d'urgence (version détail)
+        function updateUrgencyChartDetail(timeDiff, deadline) {
+            const canvas = document.getElementById('urgency-detail');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 12;
+
+            // Calculer le pourcentage de temps écoulé
+            const totalTime = deadline - new Date(deadline.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 jours avant
+            const elapsedTime = deadline - new Date();
+            const percentage = Math.max(0, Math.min(1, (totalTime - elapsedTime) / totalTime));
+
+            // Déterminer la couleur basée sur l'urgence
+            let color;
+            if (timeDiff <= 0) {
+                color = '#e74c3c'; // Rouge pour en retard
+            } else if (timeDiff <= 24 * 60 * 60 * 1000) { // 1 jour
+                color = '#f39c12'; // Orange
+            } else if (timeDiff <= 3 * 24 * 60 * 60 * 1000) { // 3 jours
+                color = '#f1c40f'; // Jaune
+            } else {
+                color = '#27ae60'; // Vert
+            }
+
+            // Effacer le canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner le cercle de fond
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fill();
+
+            // Dessiner le cercle de progression
+            if (percentage > 0) {
+                const startAngle = -Math.PI / 2;
+                const endAngle = startAngle + (percentage * 2 * Math.PI);
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+        }
+
+        // Modifier la fonction toggleEtape pour déclencher les confettis quand la tâche est terminée
+        const originalToggleEtape = toggleEtape;
+        toggleEtape = function(tacheId, etapeId, checkbox) {
+            originalToggleEtape(tacheId, etapeId, checkbox);
+
+            // Vérifier si la tâche est terminée après la mise à jour
+            setTimeout(() => {
+                const allCheckboxes = document.querySelectorAll('.step-checkbox');
+                const checkedCheckboxes = document.querySelectorAll('.step-checkbox:checked');
+
+                if (allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length) {
+                    // Toutes les étapes sont cochées - la tâche est terminée !
+                    createConfetti();
+                }
+            }, 500);
+        };
+
+        // Initialiser le compte à rebours au chargement
+        updateCountdown();
+
+        // Mettre à jour le compte à rebours toutes les minutes
+        setInterval(updateCountdown, 60000);
+    </script>
+</body>
+</html>

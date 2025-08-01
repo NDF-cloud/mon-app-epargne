@@ -1,0 +1,411 @@
+<!-- Contenu de l'onglet Épargne -->
+<div class="tab-content active">
+    <div class="epargne-container">
+        <div class="epargne-header">
+            <h2><i class="fas fa-piggy-bank"></i> Mes Objectifs d'Épargne</h2>
+            <a href="{{ url_for('formulaire_objectif') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouvel Objectif
+            </a>
+        </div>
+
+        {% if objectifs %}
+            <div class="objectifs-grid">
+                {% for objectif in objectifs %}
+                    <div class="objectif-card">
+                        <div class="objectif-header">
+                            <h3 class="objectif-title">{{ objectif.nom }}</h3>
+                            <span class="objectif-status {% if objectif.status == 'actif' %}active{% else %}inactive{% endif %}">
+                                {{ objectif.status }}
+                            </span>
+                        </div>
+
+                        <div class="progress-container">
+                            {% set pourcentage = (objectif.montant_actuel / objectif.montant_cible * 100) if objectif.montant_cible > 0 else 0 %}
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ pourcentage }}%;"></div>
+                            </div>
+                            <div class="progress-text">{{ "%.1f"|format(pourcentage) }}%</div>
+                        </div>
+
+                        <div class="objectif-amounts">
+                            <div class="amount-item">
+                                <span class="amount-label">Actuel</span>
+                                <span class="amount-value">{{ format_currency(objectif.montant_actuel) }}</span>
+                            </div>
+                            <div class="amount-item">
+                                <span class="amount-label">Objectif</span>
+                                <span class="amount-value">{{ format_currency(objectif.montant_cible) }}</span>
+                            </div>
+                        </div>
+
+                        {% if objectif.date_limite %}
+                            <div class="objectif-date">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Date limite: {{ objectif.date_limite }}</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="objectif-actions">
+                            <a href="{{ url_for('objectif_detail', objectif_id=objectif.id) }}" class="btn btn-outline">
+                                <i class="fas fa-eye"></i> Détails
+                            </a>
+                            <a href="{{ url_for('formulaire_objectif', objectif_id=objectif.id) }}" class="btn btn-outline">
+                                <i class="fas fa-edit"></i> Modifier
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-piggy-bank"></i>
+                </div>
+                <h3>Aucun objectif d'épargne</h3>
+                <p>Commencez par créer votre premier objectif d'épargne</p>
+                <a href="{{ url_for('formulaire_objectif') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Créer un objectif
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .epargne-container {
+        padding: 20px;
+    }
+
+    .epargne-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark-mode .epargne-header {
+        background-color: rgba(30, 30, 30, 0.95);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .epargne-header h2 {
+        color: #667eea;
+        margin: 0;
+        font-size: 1.8em;
+    }
+
+    .dark-mode .epargne-header h2 {
+        color: #76c7c0;
+    }
+
+    .objectifs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+
+    .objectif-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .objectif-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .dark-mode .objectif-card {
+        background-color: rgba(30, 30, 30, 0.95);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .objectif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .objectif-title {
+        color: #333;
+        margin: 0;
+        font-size: 1.3em;
+        font-weight: 600;
+    }
+
+    .dark-mode .objectif-title {
+        color: #e0e0e0;
+    }
+
+    .objectif-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .objectif-status.active {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .objectif-status.inactive {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        color: white;
+    }
+
+    .progress-container {
+        margin-bottom: 20px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .dark-mode .progress-bar {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        text-align: center;
+        font-size: 0.9em;
+        color: #666;
+        font-weight: 600;
+    }
+
+    .dark-mode .progress-text {
+        color: #aaa;
+    }
+
+    .objectif-amounts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .amount-item {
+        text-align: center;
+        padding: 15px;
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .dark-mode .amount-item {
+        background: rgba(118, 199, 192, 0.1);
+        border-color: rgba(118, 199, 192, 0.2);
+    }
+
+    .amount-label {
+        display: block;
+        font-size: 0.8em;
+        color: #666;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .dark-mode .amount-label {
+        color: #aaa;
+    }
+
+    .amount-value {
+        display: block;
+        font-size: 1.2em;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    .dark-mode .amount-value {
+        color: #76c7c0;
+    }
+
+    .objectif-date {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(255, 193, 7, 0.1);
+        border-radius: 8px;
+        font-size: 0.9em;
+        color: #856404;
+    }
+
+    .dark-mode .objectif-date {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+
+    .objectif-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9em;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .dark-mode .btn-primary {
+        background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+        box-shadow: 0 2px 10px rgba(118, 199, 192, 0.3);
+    }
+
+    .dark-mode .btn-primary:hover {
+        box-shadow: 0 4px 15px rgba(118, 199, 192, 0.4);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .btn-outline:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .dark-mode .btn-outline {
+        color: #76c7c0;
+        border-color: #76c7c0;
+    }
+
+    .dark-mode .btn-outline:hover {
+        background: #76c7c0;
+        color: #1a1a2e;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark-mode .empty-state {
+        background-color: rgba(30, 30, 30, 0.95);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .empty-icon {
+        font-size: 4em;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+
+    .dark-mode .empty-icon {
+        color: #555;
+    }
+
+    .empty-state h3 {
+        color: #666;
+        margin-bottom: 10px;
+        font-size: 1.5em;
+    }
+
+    .dark-mode .empty-state h3 {
+        color: #aaa;
+    }
+
+    .empty-state p {
+        color: #999;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+    }
+
+    .dark-mode .empty-state p {
+        color: #777;
+    }
+
+    /* Styles Responsive */
+    @media (max-width: 768px) {
+        .epargne-header {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .epargne-header h2 {
+            font-size: 1.5em;
+        }
+
+        .objectifs-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .objectif-amounts {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .objectif-actions {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .epargne-container {
+            padding: 10px;
+        }
+
+        .objectif-card {
+            padding: 20px;
+        }
+
+        .objectif-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+    }
+</style>
