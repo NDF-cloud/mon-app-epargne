@@ -9,23 +9,23 @@ from psycopg2.extras import RealDictCursor
 
 def init_postgres_render():
     """Initialise la base de données PostgreSQL sur Render"""
-    
+
     print("🚀 Initialisation de la base de données PostgreSQL sur Render...")
-    
+
     # Récupérer l'URL de la base de données depuis les variables d'environnement
     database_url = os.getenv('DATABASE_URL')
-    
+
     if not database_url:
         print("❌ DATABASE_URL non définie")
         return
-    
+
     try:
         # Se connecter à la base de données
         conn = psycopg2.connect(database_url)
         cur = conn.cursor()
-        
+
         print("✅ Connexion à PostgreSQL établie")
-        
+
         # Créer la table users avec toutes les colonnes nécessaires
         print("📋 Création de la table users...")
         cur.execute("""
@@ -57,7 +57,7 @@ def init_postgres_render():
                 date_creation_profil TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Créer la table objectifs
         print("📋 Création de la table objectifs...")
         cur.execute("""
@@ -72,7 +72,7 @@ def init_postgres_render():
                 date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Créer la table transactions
         print("📋 Création de la table transactions...")
         cur.execute("""
@@ -86,7 +86,7 @@ def init_postgres_render():
                 date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Créer la table taches
         print("📋 Création de la table taches...")
         cur.execute("""
@@ -101,7 +101,7 @@ def init_postgres_render():
                 user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
             )
         """)
-        
+
         # Créer la table etapes
         print("📋 Création de la table etapes...")
         cur.execute("""
@@ -113,7 +113,7 @@ def init_postgres_render():
                 ordre INTEGER DEFAULT 0
             )
         """)
-        
+
         # Créer la table evenements
         print("📋 Création de la table evenements...")
         cur.execute("""
@@ -131,7 +131,7 @@ def init_postgres_render():
                 date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Créer la table notifications
         print("📋 Création de la table notifications...")
         cur.execute("""
@@ -145,28 +145,28 @@ def init_postgres_render():
                 date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Valider les changements
         conn.commit()
         print("✅ Toutes les tables ont été créées avec succès !")
-        
+
         # Vérifier les tables créées
         cur.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
+            SELECT table_name
+            FROM information_schema.tables
             WHERE table_schema = 'public'
             ORDER BY table_name
         """)
-        
+
         tables = cur.fetchall()
         print("\n📊 Tables créées :")
         for table in tables:
             print(f"   - {table[0]}")
-        
+
         # Créer un utilisateur de test si aucun utilisateur n'existe
         cur.execute("SELECT COUNT(*) FROM users")
         user_count = cur.fetchone()[0]
-        
+
         if user_count == 0:
             print("\n👤 Création d'un utilisateur de test...")
             cur.execute("""
@@ -175,16 +175,16 @@ def init_postgres_render():
             """)
             conn.commit()
             print("✅ Utilisateur de test créé : username='test', password='test'")
-        
+
         cur.close()
         conn.close()
-        
+
         print("\n🎉 Initialisation de la base de données terminée avec succès !")
-        
+
     except Exception as e:
         print(f"❌ Erreur lors de l'initialisation : {e}")
         if 'conn' in locals():
             conn.close()
 
 if __name__ == "__main__":
-    init_postgres_render() 
+    init_postgres_render()

@@ -1438,7 +1438,7 @@ def notifications():
         sql_objectifs_proches = sql_placeholder('''
             SELECT id, nom, montant_cible, montant_actuel, date_limite, status, user_id
             FROM objectifs
-            WHERE user_id = ? AND status = "actif" AND (montant_actuel / montant_cible) >= 0.9
+            WHERE user_id = ? AND status = 'actif' AND (montant_actuel / montant_cible) >= 0.9
         ''')
         cur.execute(sql_objectifs_proches, (user_id,))
         objectifs_proches_raw = cur.fetchall()
@@ -1518,7 +1518,7 @@ def rapports():
         cur.execute(sql_total_objectifs, (user_id,))
         total_objectifs = cur.fetchone()[0]
 
-        sql_epargne_actuelle = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
+        sql_epargne_actuelle = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = \'actif\'')
         cur.execute(sql_epargne_actuelle, (user_id,))
         epargne_actuelle = cur.fetchone()[0] or 0
         # Convertir l'épargne vers la devise système
@@ -1826,7 +1826,7 @@ def export_charts():
 
     try:
         # Récupérer les données pour les graphiques
-        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = "actif"')
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = \'actif\'')
         cur.execute(sql_objectifs, (user_id,))
         objectifs_raw = cur.fetchall()
         objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
@@ -1885,7 +1885,7 @@ def export_print():
 
     try:
         # Récupérer les données essentielles
-        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = "actif" ORDER BY id DESC')
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = \'actif\' ORDER BY id DESC')
         cur.execute(sql_objectifs, (user_id,))
         objectifs_raw = cur.fetchall()
         objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
@@ -1942,12 +1942,12 @@ def tab_content(tab_name):
         is_postgres = bool(os.environ.get('DATABASE_URL'))
 
         try:
-            sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = "actif" ORDER BY id DESC')
+            sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = \'actif\' ORDER BY id DESC')
             cur.execute(sql_objectifs, (user_id,))
             objectifs = cur.fetchall()
 
             # Calculer l'épargne totale
-            sql_total_epargne = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
+            sql_total_epargne = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = \'actif\'')
             cur.execute(sql_total_epargne, (user_id,))
             total_epargne = cur.fetchone()[0] or 0
 
@@ -2069,11 +2069,11 @@ def tab_content(tab_name):
 
         try:
             # Statistiques pour le dashboard
-            sql_total_objectifs = sql_placeholder('SELECT COUNT(*) FROM objectifs WHERE user_id = ? AND status = "actif"')
+            sql_total_objectifs = sql_placeholder('SELECT COUNT(*) FROM objectifs WHERE user_id = ? AND status = \'actif\'')
             cur.execute(sql_total_objectifs, (user_id,))
             total_objectifs = cur.fetchone()[0]
 
-            sql_epargne_totale = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
+            sql_epargne_totale = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = \'actif\'')
             cur.execute(sql_epargne_totale, (user_id,))
             epargne_totale = cur.fetchone()[0] or 0
 
@@ -2114,7 +2114,7 @@ def tab_content(tab_name):
             cur.execute(sql_total_objectifs, (user_id,))
             total_objectifs = cur.fetchone()[0]
 
-            sql_epargne_actuelle = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
+            sql_epargne_actuelle = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = \'actif\'')
             cur.execute(sql_epargne_actuelle, (user_id,))
             epargne_actuelle = cur.fetchone()[0] or 0
 
