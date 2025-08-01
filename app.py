@@ -59,31 +59,30 @@ def init_database():
         cur.execute('''
         CREATE TABLE users (
             id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            security_question TEXT,
-            security_answer TEXT,
-            default_currency TEXT DEFAULT 'XAF',
-            countdown_enabled BOOLEAN DEFAULT true,
-            countdown_days INTEGER DEFAULT 30,
-            display_currency BOOLEAN DEFAULT true,
-            display_progress BOOLEAN DEFAULT true,
-            notification_enabled BOOLEAN DEFAULT true,
-            auto_delete_completed BOOLEAN DEFAULT false,
+            username VARCHAR(80) UNIQUE NOT NULL,
+            password VARCHAR(120) NOT NULL,
+            security_question VARCHAR(200),
+            security_answer VARCHAR(120),
+            display_currency BOOLEAN DEFAULT TRUE,
+            display_progress BOOLEAN DEFAULT TRUE,
+            notification_enabled BOOLEAN DEFAULT TRUE,
+            auto_delete_completed BOOLEAN DEFAULT FALSE,
             auto_delete_days INTEGER DEFAULT 90,
-            -- Champs du profil utilisateur
-            nom TEXT,
-            prenom TEXT,
-            date_naissance TEXT,
-            telephone TEXT,
-            email TEXT,
-            sexe TEXT,
-            photo_profil TEXT,
+            countdown_enabled BOOLEAN DEFAULT TRUE,
+            countdown_days INTEGER DEFAULT 30,
+            default_currency VARCHAR(3) DEFAULT 'XAF',
+            nom VARCHAR(100),
+            prenom VARCHAR(100),
+            date_naissance DATE,
+            telephone VARCHAR(20),
+            email VARCHAR(120),
+            sexe VARCHAR(10),
+            photo_profil VARCHAR(200),
             bio TEXT,
             adresse TEXT,
-            ville TEXT,
-            pays TEXT DEFAULT 'Cameroun',
-            date_creation_profil TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc')
+            ville VARCHAR(100),
+            pays VARCHAR(100) DEFAULT 'Cameroun',
+            date_creation_profil TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         ''')
 
@@ -91,12 +90,13 @@ def init_database():
         cur.execute('''
         CREATE TABLE objectifs (
             id SERIAL PRIMARY KEY,
-            nom TEXT NOT NULL,
-            montant_cible REAL NOT NULL,
-            montant_actuel REAL NOT NULL DEFAULT 0,
-            date_limite TEXT,
-            status TEXT NOT NULL DEFAULT 'actif',
-            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+            nom VARCHAR(200) NOT NULL,
+            montant_cible DECIMAL(15,2) NOT NULL,
+            montant_actuel DECIMAL(15,2) DEFAULT 0,
+            date_limite DATE,
+            status VARCHAR(20) DEFAULT 'actif',
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         ''')
 
@@ -104,11 +104,12 @@ def init_database():
         cur.execute('''
         CREATE TABLE transactions (
             id SERIAL PRIMARY KEY,
-            objectif_id INTEGER NOT NULL REFERENCES objectifs(id) ON DELETE CASCADE,
-            montant REAL NOT NULL,
-            type_transaction TEXT NOT NULL,
-            date TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
-            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+            objectif_id INTEGER REFERENCES objectifs(id) ON DELETE CASCADE,
+            montant DECIMAL(15,2) NOT NULL,
+            type_transaction VARCHAR(20) NOT NULL,
+            devise_saisie VARCHAR(3) DEFAULT 'XAF',
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         ''')
 
@@ -116,13 +117,13 @@ def init_database():
         cur.execute('''
         CREATE TABLE taches (
             id SERIAL PRIMARY KEY,
-            titre TEXT NOT NULL,
+            titre VARCHAR(200) NOT NULL,
             description TEXT,
-            priorite TEXT DEFAULT 'normale',
-            statut TEXT DEFAULT 'en_cours',
-            date_creation TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
-            date_limite TEXT,
-            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+            priorite VARCHAR(20) DEFAULT 'moyenne',
+            status VARCHAR(20) DEFAULT 'en_cours',
+            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            date_limite DATE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
 
@@ -130,9 +131,9 @@ def init_database():
         cur.execute('''
         CREATE TABLE etapes (
             id SERIAL PRIMARY KEY,
-            tache_id INTEGER NOT NULL REFERENCES taches(id) ON DELETE CASCADE,
-            description TEXT NOT NULL,
-            terminee BOOLEAN DEFAULT false,
+            tache_id INTEGER REFERENCES taches(id) ON DELETE CASCADE,
+            description VARCHAR(200) NOT NULL,
+            terminee BOOLEAN DEFAULT FALSE,
             ordre INTEGER DEFAULT 0
         );
         ''')
@@ -141,15 +142,29 @@ def init_database():
         cur.execute('''
         CREATE TABLE evenements (
             id SERIAL PRIMARY KEY,
-            titre TEXT NOT NULL,
+            titre VARCHAR(200) NOT NULL,
             description TEXT,
-            date_debut TEXT NOT NULL,
-            date_fin TEXT,
-            couleur TEXT DEFAULT '#007bff',
-            rappel_minutes INTEGER DEFAULT 0,
-            rappel TEXT,
-            date_creation TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
-            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+            date_debut TIMESTAMP NOT NULL,
+            date_fin TIMESTAMP,
+            lieu VARCHAR(200),
+            type_evenement VARCHAR(50) DEFAULT 'general',
+            rappel_minutes INTEGER DEFAULT 30,
+            termine BOOLEAN DEFAULT FALSE,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        ''')
+
+        # Table notifications
+        cur.execute('''
+        CREATE TABLE notifications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            titre VARCHAR(200) NOT NULL,
+            message TEXT NOT NULL,
+            type_notification VARCHAR(50) DEFAULT 'info',
+            lue BOOLEAN DEFAULT FALSE,
+            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         ''')
 
