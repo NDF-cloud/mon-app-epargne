@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -30,7 +32,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -75,7 +77,6 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
 
         .dark-mode .form-container {
@@ -89,168 +90,49 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
-            color: #667eea;
-            font-size: 1.1em;
+            color: #333;
         }
 
         .dark-mode .form-group label {
-            color: #76c7c0;
+            color: #e0e0e0;
         }
 
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group input[type="date"],
-        .form-group input[type="password"],
+        .form-group input,
         .form-group select {
             width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
             font-size: 16px;
-            transition: all 0.3s;
-            box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.9);
-            font-family: inherit;
+            transition: all 0.3s ease;
+            background: white;
         }
 
-        .dark-mode .form-group input[type="text"],
-        .dark-mode .form-group input[type="number"],
-        .dark-mode .form-group input[type="date"],
-        .dark-mode .form-group input[type="password"],
+        .dark-mode .form-group input,
         .dark-mode .form-group select {
-            background: rgba(45, 45, 45, 0.9);
-            color: #e0e0e0;
+            background: #2a2a2a;
             border-color: #444;
+            color: #e0e0e0;
         }
 
-        .form-group input[type="text"]:focus,
-        .form-group input[type="number"]:focus,
-        .form-group input[type="date"]:focus,
-        .form-group input[type="password"]:focus,
+        .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
         }
 
-        .dark-mode .form-group input[type="text"]:focus,
-        .dark-mode .form-group input[type="number"]:focus,
-        .dark-mode .form-group input[type="date"]:focus,
-        .dark-mode .form-group input[type="password"]:focus,
+        .dark-mode .form-group input:focus,
         .dark-mode .form-group select:focus {
             border-color: #76c7c0;
             box-shadow: 0 0 0 3px rgba(118, 199, 192, 0.1);
         }
 
-        .help-text {
-            font-size: 14px;
-            color: #666;
-            margin-top: 8px;
-        }
-
-        .dark-mode .help-text {
-            color: #aaa;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s;
-            margin-right: 15px;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .dark-mode .btn-primary {
-            background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
-            box-shadow: 0 4px 15px rgba(118, 199, 192, 0.3);
-        }
-
-        .dark-mode .btn-primary:hover {
-            box-shadow: 0 6px 20px rgba(118, 199, 192, 0.4);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
-        }
-
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-        }
-
-        .flash-messages {
-            margin: 15px 0;
-            text-align: center;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-
-        .alert-error {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-            border: 1px solid rgba(220, 53, 69, 0.2);
-        }
-
-        .alert-success {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: #28a745;
-            border: 1px solid rgba(40, 167, 69, 0.2);
-        }
-
-        .dark-mode .alert-error {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-color: rgba(220, 53, 69, 0.3);
-        }
-
-        .dark-mode .alert-success {
-            background-color: rgba(40, 167, 69, 0.2);
-            border-color: rgba(40, 167, 69, 0.3);
-        }
-
-        .password-field {
-            border-top: 2px solid #667eea;
-            padding-top: 20px;
-            margin-top: 25px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            padding: 20px;
-            border-radius: 12px;
-        }
-
-        .dark-mode .password-field {
-            border-color: #76c7c0;
-            background: linear-gradient(135deg, rgba(118, 199, 192, 0.1) 0%, rgba(90, 156, 164, 0.1) 100%);
-        }
-
         .currency-input-group {
             display: flex;
             gap: 10px;
-            align-items: center;
         }
 
         .currency-input-group input {
@@ -258,11 +140,94 @@
         }
 
         .currency-input-group select {
-            width: auto;
-            min-width: 100px;
+            width: 100px;
         }
 
-        /* Styles Responsive */
+        .help-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .dark-mode .help-text {
+            color: #aaa;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .dark-mode .btn-secondary {
+            background: rgba(118, 199, 192, 0.1);
+            color: #76c7c0;
+            border-color: rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .btn-secondary:hover {
+            background: rgba(118, 199, 192, 0.2);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .dark-mode .alert-success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #75b798;
+        }
+
+        .dark-mode .alert-error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #ea868f;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -270,7 +235,6 @@
 
             .header {
                 padding: 20px;
-                margin-bottom: 15px;
             }
 
             .header h1 {
@@ -281,29 +245,14 @@
                 padding: 20px;
             }
 
-            .btn {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 10px;
-            }
-
             .currency-input-group {
                 flex-direction: column;
-                gap: 10px;
             }
 
             .currency-input-group select {
                 width: 100%;
             }
-        }
 
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            .form-group input[type="text"],
-            .form-group input[type="number"],
             .form-group input[type="date"],
             .form-group input[type="password"],
             .form-group select {
@@ -322,8 +271,8 @@
             <h1>💰 {% if objectif %}Modifier l'objectif{% else %}Créer un nouvel objectif{% endif %}</h1>
             <p>Gérez vos objectifs d'épargne</p>
             <div style="margin-top: 15px;">
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Retour
+                <a href="{{ url_for('app_with_tabs') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour à l'application
                 </a>
             </div>
         </div>
@@ -387,7 +336,7 @@
                 </div>
 
                 <div style="margin-top: 30px; text-align: center;">
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('app_with_tabs') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Annuler
                     </a>
                     <button type="submit" class="btn btn-primary">

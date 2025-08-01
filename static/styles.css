@@ -54,6 +54,49 @@
     border-radius: 10px;
 }
 
+/* Styles pour le diagramme de progression des tâches */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    min-width: 80px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.dark-mode .stat-item {
+    background: rgba(118, 199, 192, 0.1);
+}
+
+.dark-mode .stat-number {
+    color: #76c7c0;
+}
+
+.dark-mode .stat-label {
+    color: #ccc;
+}
+
 /* Styles pour les tableaux */
 .table {
     border-radius: 10px;
@@ -110,19 +153,241 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-/* Styles responsifs */
-@media (max-width: 768px) {
+/* Styles responsifs améliorés */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 95%;
+    }
+
     .card {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 992px) {
+    .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+
+    .col-md-6, .col-lg-4, .col-lg-6 {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .card-header h5 {
+        font-size: 1.1em;
     }
 
     .btn {
         font-size: 0.9em;
+        padding: 10px 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 70px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .card {
+        margin-bottom: 15px;
+        border-radius: 12px;
+    }
+
+    .card-header {
+        padding: 15px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    .btn {
+        font-size: 0.85em;
         padding: 8px 16px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .btn-group .btn {
+        width: auto;
+        margin-bottom: 0;
     }
 
     .table-responsive {
+        font-size: 0.85em;
+    }
+
+    .table th, .table td {
+        padding: 8px 6px;
+    }
+
+    .stat-item {
+        min-width: 70px;
+        padding: 8px;
+    }
+
+    .stat-number {
+        font-size: 1.3em;
+    }
+
+    .stat-label {
+        font-size: 0.8em;
+    }
+
+    /* Amélioration des formulaires sur mobile */
+    .form-control, .form-select {
+        font-size: 16px; /* Évite le zoom sur iOS */
+        padding: 12px 15px;
+    }
+
+    .form-label {
         font-size: 0.9em;
+        margin-bottom: 6px;
+    }
+
+    /* Amélioration des graphiques sur mobile */
+    canvas {
+        max-height: 250px;
+    }
+
+    /* Amélioration des badges sur mobile */
+    .badge {
+        font-size: 0.8em;
+        padding: 6px 12px;
+    }
+
+    /* Amélioration des progress bars sur mobile */
+    .progress {
+        height: 8px;
+    }
+
+    /* Amélioration des alertes sur mobile */
+    .alert {
+        font-size: 0.9em;
+        padding: 12px 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    body {
+        padding-top: 60px;
+    }
+
+    .container {
+        padding: 5px;
+    }
+
+    .card {
+        margin-bottom: 10px;
+        border-radius: 10px;
+    }
+
+    .card-header {
+        padding: 12px;
+    }
+
+    .card-body {
+        padding: 12px;
+    }
+
+    .btn {
+        font-size: 0.8em;
+        padding: 10px 12px;
+    }
+
+    .table-responsive {
+        font-size: 0.8em;
+    }
+
+    .table th, .table td {
+        padding: 6px 4px;
+    }
+
+    .stat-item {
+        min-width: 60px;
+        padding: 6px;
+    }
+
+    .stat-number {
+        font-size: 1.2em;
+    }
+
+    .stat-label {
+        font-size: 0.75em;
+    }
+
+    /* Masquer certaines colonnes sur très petits écrans */
+    .table-responsive .table th:nth-child(4),
+    .table-responsive .table td:nth-child(4) {
+        display: none;
+    }
+
+    /* Amélioration des formulaires sur très petits écrans */
+    .form-control, .form-select {
+        font-size: 16px;
+        padding: 10px 12px;
+    }
+
+    /* Amélioration des graphiques sur très petits écrans */
+    canvas {
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 3px;
+    }
+
+    .card {
+        margin-bottom: 8px;
+        border-radius: 8px;
+    }
+
+    .card-header {
+        padding: 10px;
+    }
+
+    .card-body {
+        padding: 10px;
+    }
+
+    .btn {
+        font-size: 0.75em;
+        padding: 8px 10px;
+    }
+
+    .table-responsive {
+        font-size: 0.75em;
+    }
+
+    .table th, .table td {
+        padding: 4px 2px;
+    }
+
+    .stat-item {
+        min-width: 50px;
+        padding: 4px;
+    }
+
+    .stat-number {
+        font-size: 1.1em;
+    }
+
+    .stat-label {
+        font-size: 0.7em;
+    }
+
+    /* Masquer plus de colonnes sur très petits écrans */
+    .table-responsive .table th:nth-child(3),
+    .table-responsive .table td:nth-child(3) {
+        display: none;
     }
 }
 
@@ -208,4 +473,270 @@ canvas {
 
 .dropdown-item:hover {
     background-color: rgba(102, 126, 234, 0.1);
+}
+
+/* Améliorations pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Améliorations pour les écrans haute densité */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .card {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Améliorations pour l'orientation paysage sur mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    body {
+        padding-top: 50px;
+    }
+
+    .card {
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+}
+
+/* Mode sombre pour l'application principale */
+.dark-mode {
+    background: linear-gradient(135deg, #4a5568 0%, #718096 100%) !important;
+    color: #f7fafc !important;
+}
+
+.dark-mode .fixed-header {
+    background: rgba(45, 55, 72, 0.95);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .header-brand h1 {
+    color: #76c7c0;
+}
+
+.dark-mode .user-info {
+    color: #f7fafc;
+}
+
+.dark-mode .user-avatar {
+    background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+}
+
+.dark-mode .btn-settings {
+    background: rgba(118, 199, 192, 0.2);
+    color: #76c7c0;
+    border: 1px solid rgba(118, 199, 192, 0.3);
+}
+
+.dark-mode .btn-settings:hover {
+    background: rgba(118, 199, 192, 0.3);
+    color: #5db3ac;
+}
+
+.dark-mode .container {
+    background: rgba(45, 55, 72, 0.95);
+}
+
+.dark-mode .header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: #f7fafc;
+}
+
+.dark-mode .header h1 {
+    color: #76c7c0;
+}
+
+.dark-mode .header p {
+    color: rgba(247, 250, 252, 0.9);
+}
+
+/* Mode sombre pour les onglets */
+.dark-mode .nav-tabs-container {
+    background: rgba(45, 55, 72, 0.95);
+    border: 1px solid rgba(118, 199, 192, 0.3);
+}
+
+.dark-mode .nav-tab {
+    background: rgba(74, 85, 104, 0.8);
+    color: #76c7c0;
+    border: 1px solid rgba(118, 199, 192, 0.2);
+}
+
+.dark-mode .nav-tab:hover {
+    background: rgba(88, 103, 128, 0.8);
+    color: #5db3ac;
+    border-color: rgba(118, 199, 192, 0.4);
+}
+
+.dark-mode .nav-tab.active {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: white;
+    border-color: rgba(118, 199, 192, 0.6);
+    box-shadow: 0 4px 15px rgba(118, 199, 192, 0.4);
+}
+
+/* Mode sombre pour les cartes et contenu */
+.dark-mode .card {
+    background: rgba(45, 55, 72, 0.95);
+    color: #f7fafc;
+    border: 1px solid rgba(118, 199, 192, 0.2);
+}
+
+.dark-mode .card-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: #f7fafc;
+}
+
+.dark-mode .card-body {
+    color: #f7fafc;
+}
+
+.dark-mode .table {
+    color: #f7fafc;
+}
+
+.dark-mode .table thead th {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: #f7fafc;
+}
+
+.dark-mode .table tbody tr {
+    background: rgba(74, 85, 104, 0.5);
+}
+
+.dark-mode .table tbody tr:hover {
+    background: rgba(88, 103, 128, 0.5);
+}
+
+/* Mode sombre pour les formulaires */
+.dark-mode .form-control,
+.dark-mode .form-select {
+    background: rgba(74, 85, 104, 0.9);
+    color: #f7fafc;
+    border-color: #718096;
+}
+
+.dark-mode .form-control:focus,
+.dark-mode .form-select:focus {
+    border-color: #76c7c0;
+    box-shadow: 0 0 0 3px rgba(118, 199, 192, 0.2);
+}
+
+.dark-mode .form-label {
+    color: #76c7c0;
+}
+
+/* Mode sombre pour les boutons */
+.dark-mode .btn-primary {
+    background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+    color: white;
+}
+
+.dark-mode .btn-primary:hover {
+    background: linear-gradient(135deg, #5db3ac 0%, #4a8a92 100%);
+}
+
+.dark-mode .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+}
+
+/* Mode sombre pour les alertes */
+.dark-mode .alert-error {
+    background-color: rgba(197, 48, 48, 0.1);
+    color: #feb2b2;
+    border-color: #c53030;
+}
+
+.dark-mode .alert-success {
+    background-color: rgba(47, 133, 90, 0.1);
+    color: #9ae6b4;
+    border-color: #2f855a;
+}
+
+/* Mode sombre pour les statistiques */
+.dark-mode .stat-item {
+    background: rgba(118, 199, 192, 0.1);
+}
+
+.dark-mode .stat-number {
+    color: #76c7c0;
+}
+
+.dark-mode .stat-label {
+    color: #ccc;
+}
+
+/* Mode sombre pour les progress bars */
+.dark-mode .progress {
+    background-color: rgba(45, 45, 45, 0.8);
+}
+
+.dark-mode .progress-bar {
+    background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+}
+
+/* Mode sombre pour les badges */
+.dark-mode .badge {
+    background: rgba(118, 199, 192, 0.2);
+    color: #76c7c0;
+}
+
+/* Mode sombre pour les modales */
+.dark-mode .modal-content {
+    background: rgba(45, 55, 72, 0.95);
+    color: #f7fafc;
+}
+
+.dark-mode .modal-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: #f7fafc;
+}
+
+/* Mode sombre pour les dropdowns */
+.dark-mode .dropdown-menu {
+    background: rgba(45, 55, 72, 0.95);
+    border: 1px solid rgba(118, 199, 192, 0.3);
+}
+
+.dark-mode .dropdown-item {
+    color: #f7fafc;
+}
+
+.dark-mode .dropdown-item:hover {
+    background-color: rgba(118, 199, 192, 0.1);
+    color: #76c7c0;
+}
+
+/* Mode sombre pour la pagination */
+.dark-mode .pagination .page-link {
+    background: rgba(74, 85, 104, 0.8);
+    color: #76c7c0;
+    border-color: #718096;
+}
+
+.dark-mode .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+    color: white;
+}
+
+/* Mode sombre pour les notifications */
+.dark-mode .notification-item {
+    background: rgba(45, 55, 72, 0.95);
+    color: #f7fafc;
+    border: 1px solid rgba(118, 199, 192, 0.2);
+}
+
+.dark-mode .notification-item:hover {
+    background: rgba(74, 85, 104, 0.95);
+    border-color: rgba(118, 199, 192, 0.4);
 }

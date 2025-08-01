@@ -407,7 +407,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-link">← Retour à tous les objectifs</a>
+        <a href="{{ url_for('app_with_tabs') }}" class="back-link">← Retour à tous les objectifs</a>
 
         <div class="header">
             <h1>💰 {{ objectif.nom }}</h1>
@@ -424,20 +424,20 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number">{{ format_currency(objectif.montant_actuel) }}</div>
+                <div class="stat-number">{{ format_currency(objectif.montant_actuel, get_currency_symbol()) }}</div>
                 <div class="stat-label">Épargne actuelle</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">{{ format_currency(objectif.montant_cible) }}</div>
+                <div class="stat-number">{{ format_currency(objectif.montant_cible, get_currency_symbol()) }}</div>
                 <div class="stat-label">Objectif</div>
         </div>
             <div class="stat-card">
-                <div class="stat-number">{{ format_currency(montant_restant) }}</div>
+                <div class="stat-number">{{ format_currency(montant_restant, get_currency_symbol()) }}</div>
                 <div class="stat-label">Restant à épargner</div>
         </div>
             {% if rythme_quotidien > 0 %}
             <div class="stat-card">
-                <div class="stat-number">{{ format_currency(rythme_quotidien) }}</div>
+                <div class="stat-number">{{ format_currency(rythme_quotidien, get_currency_symbol()) }}</div>
                 <div class="stat-label">Rythme / jour</div>
             </div>
             {% endif %}
@@ -493,13 +493,13 @@
             <tbody>
                 {% for trans in transactions %}
                 <tr>
-                    <td>{{ trans.date if trans.date else 'N/A' }}</td>
-                    <td class="{{ trans.type_transaction }}">{{ trans.type_transaction|capitalize }}</td>
-                    <td class="{{ trans.type_transaction }}">
-                    {{ format_currency(trans.montant, trans.devise_saisie if trans.devise_saisie else session.get('default_currency', 'XAF')) }}
+                    <td>{{ trans.date_transaction if trans.date_transaction else 'N/A' }}</td>
+                    <td class="entree">Entrée</td>
+                    <td class="entree">
+                    {{ format_currency_direct(trans.montant, trans.devise_saisie if trans.devise_saisie else session.get('default_currency', 'XAF')) }}
                     {% if trans.devise_saisie and trans.devise_saisie != session.get('default_currency', 'XAF') %}
                     <small style="color: #666; font-size: 0.8em;">
-                        ({{ format_currency(convert_currency(trans.montant, trans.devise_saisie, session.get('default_currency', 'XAF')), session.get('default_currency', 'XAF')) }})
+                        ({{ format_currency_direct(convert_currency(trans.montant, trans.devise_saisie, session.get('default_currency', 'XAF')), session.get('default_currency', 'XAF')) }})
                     </small>
                     {% endif %}
                 </td>
@@ -532,12 +532,22 @@
     </div>
 
     <script>
-        // Taux de change (simulés)
-        const exchangeRates = {
-            'XAF': { 'EUR': 0.00152, 'USD': 0.00165, 'XAF': 1.0 },
-            'EUR': { 'XAF': 657.89, 'USD': 1.09, 'EUR': 1.0 },
-            'USD': { 'XAF': 606.06, 'EUR': 0.92, 'USD': 1.0 }
+        // Taux de change chargés depuis l'API pour cohérence
+        let exchangeRates = {
+            'XAF': { 'EUR': 0.001538, 'USD': 0.001667, 'XAF': 1.0 },
+            'EUR': { 'XAF': 650.0, 'USD': 1.08, 'EUR': 1.0 },
+            'USD': { 'XAF': 600.0, 'EUR': 0.925926, 'USD': 1.0 }
         };
+
+        // Charger les taux de change depuis l'API
+        fetch('/api/exchange_rates')
+            .then(response => response.json())
+            .then(rates => {
+                exchangeRates = rates;
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des taux de change:', error);
+            });
 
         const systemCurrency = '{{ session.get("default_currency", "XAF") }}';
         const currencySymbols = {
@@ -787,5 +797,4 @@
         });
     </script>
 </body>
-</html>
 </html>

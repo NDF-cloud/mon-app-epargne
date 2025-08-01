@@ -390,8 +390,8 @@
             <h3>📤 Export des Rapports</h3>
             <p>Téléchargez vos rapports au format PDF ou Excel pour les partager ou les archiver.</p>
             <div class="export-buttons">
-                <button class="btn btn-primary">📄 Exporter en PDF</button>
-                <button class="btn btn-success">📊 Exporter en Excel</button>
+                <button class="btn btn-primary" data-export="pdf">📄 Exporter en PDF</button>
+                <button class="btn btn-success" data-export="excel">📊 Exporter en Excel</button>
             </div>
         </div>
     </div>
@@ -466,5 +466,9 @@
             }
         });
     </script>
+    <!-- html2pdf pour l'export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Script d'exportation -->
+    <script src="{{ url_for('static', filename='export_functions.js') }}"></script>
 </body>
 </html>

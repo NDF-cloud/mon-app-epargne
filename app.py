@@ -17,34 +17,34 @@ app.secret_key = 'une-cle-vraiment-secrete-pour-les-sessions-utilisateurs'
 # Initialisation automatique de la base de données
 def init_database():
     """Initialise la base de données PostgreSQL avec toutes les tables nécessaires"""
-    
+
     # Récupérer l'URL de la base de données depuis les variables d'environnement
     DATABASE_URL = os.getenv('DATABASE_URL')
-    
+
     if not DATABASE_URL:
         print("⚠️  DATABASE_URL non définie, utilisation de SQLite")
         return False
-    
+
     try:
         print("🔗 Connexion à la base de données PostgreSQL...")
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
-        
+
         # Vérifier si les tables existent déjà
         cur.execute("""
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
+                SELECT FROM information_schema.tables
+                WHERE table_schema = 'public'
                 AND table_name = 'users'
             );
         """)
-        
+
         if cur.fetchone()[0]:
             print("✅ Tables déjà existantes, initialisation ignorée")
             cur.close()
             conn.close()
             return True
-        
+
         print("🗑️  Suppression des anciennes tables (si elles existent)...")
         cur.execute("DROP TABLE IF EXISTS transactions CASCADE;")
         cur.execute("DROP TABLE IF EXISTS taches CASCADE;")
@@ -52,9 +52,9 @@ def init_database():
         cur.execute("DROP TABLE IF EXISTS evenements CASCADE;")
         cur.execute("DROP TABLE IF EXISTS objectifs CASCADE;")
         cur.execute("DROP TABLE IF EXISTS users CASCADE;")
-        
+
         print("🏗️  Création de la structure des tables...")
-        
+
         # Table users
         cur.execute('''
         CREATE TABLE users (
@@ -70,10 +70,23 @@ def init_database():
             display_progress BOOLEAN DEFAULT true,
             notification_enabled BOOLEAN DEFAULT true,
             auto_delete_completed BOOLEAN DEFAULT false,
-            auto_delete_days INTEGER DEFAULT 90
+            auto_delete_days INTEGER DEFAULT 90,
+            -- Champs du profil utilisateur
+            nom TEXT,
+            prenom TEXT,
+            date_naissance TEXT,
+            telephone TEXT,
+            email TEXT,
+            sexe TEXT,
+            photo_profil TEXT,
+            bio TEXT,
+            adresse TEXT,
+            ville TEXT,
+            pays TEXT DEFAULT 'Cameroun',
+            date_creation_profil TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc')
         );
         ''')
-        
+
         # Table objectifs
         cur.execute('''
         CREATE TABLE objectifs (
@@ -86,7 +99,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table transactions
         cur.execute('''
         CREATE TABLE transactions (
@@ -98,7 +111,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table taches
         cur.execute('''
         CREATE TABLE taches (
@@ -112,7 +125,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table etapes
         cur.execute('''
         CREATE TABLE etapes (
@@ -123,7 +136,7 @@ def init_database():
             ordre INTEGER DEFAULT 0
         );
         ''')
-        
+
         # Table evenements
         cur.execute('''
         CREATE TABLE evenements (
@@ -139,14 +152,14 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         print("✅ Structure des tables créée avec succès.")
         conn.commit()
         cur.close()
         conn.close()
         print("🔒 Connexion fermée.")
         return True
-        
+
     except Exception as e:
         print(f"❌ Erreur lors de l'initialisation de la base de données: {e}")
         return False
@@ -238,10 +251,20 @@ def convert_etape_to_dict(row, is_postgres=False):
         }
 
 def format_currency(amount, currency=None):
-    """Formate un montant selon la devise sélectionnée"""
+    """Formate un montant selon la devise sélectionnée avec conversion automatique"""
     if currency is None:
         currency = session.get('default_currency', 'XAF')
 
+    # Supposer que le montant est en XAF par défaut (devise de base)
+    from_currency = 'XAF'
+
+    # Convertir le montant vers la devise sélectionnée
+    converted_amount = convert_currency(amount, from_currency, currency)
+
+    return format_currency_direct(converted_amount, currency)
+
+def format_currency_direct(amount, currency):
+    """Formate un montant directement dans la devise spécifiée (sans conversion)"""
     currency_symbols = {
         'XAF': 'FCFA',
         'EUR': '€',
@@ -281,18 +304,18 @@ def get_exchange_rates():
     """Retourne les taux de change (simulés pour l'instant)"""
     return {
         'XAF': {
-            'EUR': 0.00152,  # 1 XAF = 0.00152 EUR
-            'USD': 0.00165,  # 1 XAF = 0.00165 USD
+            'EUR': 0.001538,  # 1 XAF = 0.001538 EUR (1/650)
+            'USD': 0.001667,  # 1 XAF = 0.001667 USD (1/600)
             'XAF': 1.0
         },
         'EUR': {
-            'XAF': 657.89,   # 1 EUR = 657.89 XAF (1/0.00152)
-            'USD': 1.09,     # 1 EUR = 1.09 USD
+            'XAF': 650.0,     # 1 EUR = 650 XAF
+            'USD': 1.08,      # 1 EUR = 1.08 USD
             'EUR': 1.0
         },
         'USD': {
-            'XAF': 606.06,   # 1 USD = 606.06 XAF (1/0.00165)
-            'EUR': 0.917431, # 1 USD = 0.917431 EUR (1/1.09)
+            'XAF': 600.0,     # 1 USD = 600 XAF
+            'EUR': 0.925926,  # 1 USD = 0.925926 EUR (1/1.08)
             'USD': 1.0
         }
     }
@@ -322,10 +345,24 @@ def get_all_currencies():
         'USD': 'Dollar US ($)'
     }
 
+@app.route('/api/exchange_rates')
+@login_required
+def get_exchange_rates_api():
+    """API pour récupérer les taux de change"""
+    return jsonify(get_exchange_rates())
+
 def convert_amount_to_system_currency(amount, from_currency='XAF'):
     """Convertit un montant vers la devise système"""
     devise_systeme = session.get('default_currency', 'XAF')
     return convert_currency(amount, from_currency, devise_systeme)
+
+def format_amount_with_conversion(amount, from_currency='XAF', to_currency=None):
+    """Formate un montant avec conversion automatique vers la devise sélectionnée"""
+    if to_currency is None:
+        to_currency = session.get('default_currency', 'XAF')
+
+    converted_amount = convert_currency(amount, from_currency, to_currency)
+    return format_currency(converted_amount, to_currency)
 
 # --- AUTHENTIFICATION ---
 @app.route('/register', methods=('GET', 'POST'))
@@ -461,36 +498,8 @@ def reset_password_final():
 @app.route('/')
 @login_required
 def index():
-    user_id = session['user_id']
-    conn = get_db_connection()
-    cur = get_cursor(conn)
-    is_postgres = bool(os.environ.get('DATABASE_URL'))
-
-    try:
-        sql = sql_placeholder("SELECT * FROM objectifs WHERE status = 'actif' AND user_id = ? ORDER BY id DESC")
-        cur.execute(sql, (user_id,))
-        objectifs_db = cur.fetchall()
-        sql = sql_placeholder("SELECT SUM(montant_actuel) as total FROM objectifs WHERE status = 'actif' AND user_id = ?")
-        cur.execute(sql, (user_id,))
-        total_epargne_result = cur.fetchone()
-    finally:
-        cur.close()
-        conn.close()
-
-    if is_postgres:
-        total_epargne = total_epargne_result['total'] if total_epargne_result and total_epargne_result['total'] is not None else 0
-        objectifs = [dict(obj) for obj in objectifs_db]
-    else:
-        total_epargne = total_epargne_result[0] if total_epargne_result and total_epargne_result[0] is not None else 0
-        objectifs = [convert_to_dict(obj, is_postgres=False) for obj in objectifs_db]
-
-    # Convertir le total vers la devise système
-    total_epargne_converti = convert_amount_to_system_currency(total_epargne, 'XAF')
-
-    for obj in objectifs:
-        progression = (obj['montant_actuel'] / obj['montant_cible']) * 100 if obj['montant_cible'] > 0 else 0
-        obj['progression'] = progression
-    return render_template('index.html', objectifs=objectifs, total_epargne=total_epargne_converti, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
+    # Rediriger vers la nouvelle interface avec onglets
+    return redirect(url_for('app_with_tabs'))
 
 @app.route('/app')
 @login_required
@@ -560,7 +569,7 @@ def objectif_detail(objectif_id):
     objectif_converti['montant_cible'] = montant_cible_converti
     objectif_converti['montant_actuel'] = montant_actuel_converti
 
-    return render_template('objectif_detail.html', objectif=objectif_converti, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien, format_currency=format_currency, get_currency_symbol=get_currency_symbol, get_all_currencies=get_all_currencies, convert_currency=convert_currency)
+    return render_template('objectif_detail.html', objectif=objectif_converti, transactions=transactions, progression=progression, montant_restant=montant_restant, rythme_quotidien=rythme_quotidien, format_currency=format_currency, format_currency_direct=format_currency_direct, get_currency_symbol=get_currency_symbol, get_all_currencies=get_all_currencies, convert_currency=convert_currency)
 
 @app.route('/formulaire_objectif/', defaults={'objectif_id': None}, methods=['GET'])
 @app.route('/formulaire_objectif/<int:objectif_id>', methods=['GET'])
@@ -711,22 +720,7 @@ def add_transaction(objectif_id):
 @app.route('/parametres')
 @login_required
 def parametres():
-    user_id = session['user_id']
-    conn = get_db_connection()
-    cur = get_cursor(conn)
-    is_postgres = bool(os.environ.get('DATABASE_URL'))
-    try:
-        sql = sql_placeholder('SELECT username, security_question FROM users WHERE id = ?')
-        cur.execute(sql, (user_id,))
-        user_raw = cur.fetchone()
-        if is_postgres:
-            user = dict(user_raw)
-        else:
-            user = {'username': user_raw[0], 'security_question': user_raw[1]}
-    finally:
-        cur.close()
-        conn.close()
-    return render_template('parametres.html', username=user['username'], security_question=user['security_question'])
+    return render_template('parametres.html')
 
 @app.route('/update_password', methods=['POST'])
 @login_required
@@ -765,10 +759,24 @@ def update_password():
 @login_required
 def update_countdown_settings():
     user_id = session['user_id']
+    countdown_enabled = request.form.get('countdown_enabled', 'true') == 'true'
+    countdown_days = request.form.get('countdown_days', 30)
     countdown_update_interval = request.form.get('countdown_update_interval', 60)
     countdown_warning_days = request.form.get('countdown_warning_days', 3)
 
-    # Sauvegarder dans la session pour l'instant (pourrait être stocké en base)
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        sql = sql_placeholder('UPDATE users SET countdown_enabled = ?, countdown_days = ? WHERE id = ?')
+        cur.execute(sql, (countdown_enabled, countdown_days, user_id))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+    # Sauvegarder dans la session pour l'instant
     session['countdown_update_interval'] = int(countdown_update_interval)
     session['countdown_warning_days'] = int(countdown_warning_days)
 
@@ -779,13 +787,25 @@ def update_countdown_settings():
 @login_required
 def update_display_settings():
     user_id = session['user_id']
+    display_currency = request.form.get('display_currency', 'true') == 'true'
+    display_progress = request.form.get('display_progress', 'true') == 'true'
     show_countdown_on_list = request.form.get('show_countdown_on_list', 'true') == 'true'
-    show_urgency_charts = request.form.get('show_urgency_charts', 'true') == 'true'
     default_currency = request.form.get('default_currency', 'XAF')
+
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        sql = sql_placeholder('UPDATE users SET display_currency = ?, display_progress = ?, default_currency = ? WHERE id = ?')
+        cur.execute(sql, (display_currency, display_progress, default_currency, user_id))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
     # Sauvegarder dans la session pour l'instant
     session['show_countdown_on_list'] = show_countdown_on_list
-    session['show_urgency_charts'] = show_urgency_charts
     session['default_currency'] = default_currency
 
     flash('Paramètres d\'affichage mis à jour !', 'success')
@@ -795,8 +815,21 @@ def update_display_settings():
 @login_required
 def update_notification_settings():
     user_id = session['user_id']
+    notification_enabled = request.form.get('notification_enabled', 'true') == 'true'
     email_notifications = request.form.get('email_notifications', 'true') == 'true'
     notification_advance_days = request.form.get('notification_advance_days', 1)
+
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        sql = sql_placeholder('UPDATE users SET notification_enabled = ? WHERE id = ?')
+        cur.execute(sql, (notification_enabled, user_id))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
     # Sauvegarder dans la session pour l'instant
     session['email_notifications'] = email_notifications
@@ -809,15 +842,198 @@ def update_notification_settings():
 @login_required
 def update_deletion_settings():
     user_id = session['user_id']
-    auto_archive_completed = request.form.get('auto_archive_completed', 'true') == 'true'
-    confirm_deletions = request.form.get('confirm_deletions', 'true') == 'true'
+    auto_delete_completed = request.form.get('auto_delete_completed', 'true') == 'true'
+    auto_delete_days = request.form.get('auto_delete_days', 90)
 
-    # Sauvegarder dans la session pour l'instant
-    session['auto_archive_completed'] = auto_archive_completed
-    session['confirm_deletions'] = confirm_deletions
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
 
-    flash('Paramètres de suppression mis à jour !', 'success')
+    try:
+        sql = sql_placeholder('UPDATE users SET auto_delete_completed = ?, auto_delete_days = ? WHERE id = ?')
+        cur.execute(sql, (auto_delete_completed, auto_delete_days, user_id))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+    flash('Paramètres de suppression automatique mis à jour !', 'success')
     return redirect(url_for('parametres'))
+
+# --- ROUTES DU PROFIL UTILISATEUR ---
+@app.route('/profil')
+@login_required
+def profil():
+    """Page de profil utilisateur"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        sql = sql_placeholder('''
+            SELECT username, nom, prenom, date_naissance, telephone, email, sexe,
+                   photo_profil, bio, adresse, ville, pays, date_creation_profil
+            FROM users WHERE id = ?
+        ''')
+        cur.execute(sql, (user_id,))
+        user_data = cur.fetchone()
+
+        if is_postgres:
+            profil = dict(user_data) if user_data else {}
+        else:
+            profil = {
+                'username': user_data[0] if user_data else '',
+                'nom': user_data[1] if user_data else '',
+                'prenom': user_data[2] if user_data else '',
+                'date_naissance': user_data[3] if user_data else '',
+                'telephone': user_data[4] if user_data else '',
+                'email': user_data[5] if user_data else '',
+                'sexe': user_data[6] if user_data else '',
+                'photo_profil': user_data[7] if user_data else '',
+                'bio': user_data[8] if user_data else '',
+                'adresse': user_data[9] if user_data else '',
+                'ville': user_data[10] if user_data else '',
+                'pays': user_data[11] if user_data else '',
+                'date_creation_profil': user_data[12] if user_data else None
+            }
+    finally:
+        cur.close()
+        conn.close()
+
+    return render_template('profil.html', profil=profil)
+
+@app.route('/update_profil', methods=['POST'])
+@login_required
+def update_profil():
+    """Mise à jour du profil utilisateur"""
+    user_id = session['user_id']
+
+    # Récupérer les données du formulaire
+    nom = request.form.get('nom', '').strip()
+    prenom = request.form.get('prenom', '').strip()
+    date_naissance = request.form.get('date_naissance', '').strip()
+    telephone = request.form.get('telephone', '').strip()
+    email = request.form.get('email', '').strip()
+    sexe = request.form.get('sexe', '').strip()
+    bio = request.form.get('bio', '').strip()
+    adresse = request.form.get('adresse', '').strip()
+    ville = request.form.get('ville', '').strip()
+    pays = request.form.get('pays', 'Cameroun').strip()
+
+    # Gestion de la photo de profil
+    photo_profil = None
+    if 'photo_profil' in request.files:
+        file = request.files['photo_profil']
+        if file and file.filename:
+            # Vérifier le type de fichier
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                # Créer un nom de fichier unique
+                filename = f"profil_{user_id}_{int(datetime.now().timestamp())}.{file.filename.rsplit('.', 1)[1].lower()}"
+
+                # Créer le dossier static/uploads s'il n'existe pas
+                upload_folder = os.path.join(app.static_folder, 'uploads')
+                if not os.path.exists(upload_folder):
+                    os.makedirs(upload_folder)
+
+                # Sauvegarder le fichier
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+                photo_profil = f"uploads/{filename}"
+
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        if photo_profil:
+            # Mise à jour avec photo
+            sql = sql_placeholder('''
+                UPDATE users SET nom = ?, prenom = ?, date_naissance = ?, telephone = ?,
+                               email = ?, sexe = ?, photo_profil = ?, bio = ?, adresse = ?,
+                               ville = ?, pays = ? WHERE id = ?
+            ''')
+            cur.execute(sql, (nom, prenom, date_naissance, telephone, email, sexe,
+                            photo_profil, bio, adresse, ville, pays, user_id))
+        else:
+            # Mise à jour sans photo
+            sql = sql_placeholder('''
+                UPDATE users SET nom = ?, prenom = ?, date_naissance = ?, telephone = ?,
+                               email = ?, sexe = ?, bio = ?, adresse = ?, ville = ?, pays = ?
+                               WHERE id = ?
+            ''')
+            cur.execute(sql, (nom, prenom, date_naissance, telephone, email, sexe,
+                            bio, adresse, ville, pays, user_id))
+
+        conn.commit()
+        flash('Profil mis à jour avec succès !', 'success')
+
+        # Mettre à jour le nom d'affichage dans la session
+        if nom and prenom:
+            session['display_name'] = f"{prenom} {nom}"
+        elif nom:
+            session['display_name'] = nom
+        elif prenom:
+            session['display_name'] = prenom
+        else:
+            session['display_name'] = session['username']
+
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la mise à jour du profil : {str(e)}', 'error')
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect(url_for('profil'))
+
+@app.route('/api/user_info')
+@login_required
+def get_user_info():
+    """API pour récupérer les informations utilisateur pour l'en-tête"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        sql = sql_placeholder('SELECT username, nom, prenom, photo_profil FROM users WHERE id = ?')
+        cur.execute(sql, (user_id,))
+        user_data = cur.fetchone()
+
+        if is_postgres:
+            user_info = dict(user_data) if user_data else {}
+        else:
+            user_info = {
+                'username': user_data[0] if user_data else '',
+                'nom': user_data[1] if user_data else '',
+                'prenom': user_data[2] if user_data else '',
+                'photo_profil': user_data[3] if user_data else ''
+            }
+
+        # Déterminer le nom d'affichage
+        if user_info.get('prenom') and user_info.get('nom'):
+            display_name = f"{user_info['prenom']} {user_info['nom']}"
+        elif user_info.get('prenom'):
+            display_name = user_info['prenom']
+        elif user_info.get('nom'):
+            display_name = user_info['nom']
+        else:
+            display_name = user_info.get('username', 'Utilisateur')
+
+        return jsonify({
+            'success': True,
+            'display_name': display_name,
+            'photo_profil': user_info.get('photo_profil', ''),
+            'username': user_info.get('username', '')
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
 
 # --- API Routes ---
 @app.route('/api/check_user_password', methods=['POST'])
@@ -878,57 +1094,7 @@ def chart_data(objectif_id):
         data_sorties.append(montant_cumulatif_sorties)
     return jsonify({'labels': labels, 'data_entrees': data_entrees, 'data_sorties': data_sorties})
 
-# --- ROUTES POUR LA GESTION DES TÂCHES ---
-@app.route('/taches')
-@login_required
-def taches():
-    user_id = session['user_id']
-    conn = get_db_connection()
-    cur = get_cursor(conn)
-    is_postgres = bool(os.environ.get('DATABASE_URL'))
 
-    try:
-        # Récupérer les tâches actives
-        sql_actives = sql_placeholder('SELECT * FROM taches WHERE user_id = ? AND termine = FALSE ORDER BY ordre ASC, date_creation ASC')
-        cur.execute(sql_actives, (user_id,))
-        taches_actives_raw = cur.fetchall()
-        taches_actives = [convert_tache_to_dict(tache, is_postgres) for tache in taches_actives_raw]
-
-        # Récupérer les tâches terminées
-        sql_terminees = sql_placeholder('SELECT * FROM taches WHERE user_id = ? AND termine = TRUE ORDER BY date_modification DESC')
-        cur.execute(sql_terminees, (user_id,))
-        taches_terminees_raw = cur.fetchall()
-        taches_terminees = [convert_tache_to_dict(tache, is_postgres) for tache in taches_terminees_raw]
-
-        # Calculer le pourcentage de progression pour chaque tâche active
-        total_etapes_global = 0
-        total_etapes_terminees_global = 0
-
-        for tache in taches_actives:
-            sql_etapes = sql_placeholder('SELECT COUNT(*) as total, SUM(CASE WHEN terminee = TRUE THEN 1 ELSE 0 END) as terminees FROM etapes WHERE tache_id = ?')
-            cur.execute(sql_etapes, (tache['id'],))
-            result = cur.fetchone()
-            if is_postgres:
-                total_etapes = result['total'] or 0
-                etapes_terminees = result['terminees'] or 0
-            else:
-                total_etapes = result[0] or 0
-                etapes_terminees = result[1] or 0
-            tache['progression'] = (etapes_terminees / total_etapes * 100) if total_etapes > 0 else 0
-            tache['total_etapes'] = total_etapes
-            tache['etapes_terminees'] = etapes_terminees
-
-            # Ajouter au total global
-            total_etapes_global += total_etapes
-            total_etapes_terminees_global += etapes_terminees
-
-        # Calculer le taux d'achèvement global
-        taux_achevement_global = (total_etapes_terminees_global / total_etapes_global * 100) if total_etapes_global > 0 else 0
-    finally:
-        cur.close()
-        conn.close()
-
-    return render_template('taches.html', taches_actives=taches_actives, taches_terminees=taches_terminees, taux_achevement_global=taux_achevement_global, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
 
 @app.route('/formulaire_tache/', defaults={'tache_id': None}, methods=['GET'])
 @app.route('/formulaire_tache/<int:tache_id>', methods=['GET'])
@@ -1241,85 +1407,7 @@ def convert_evenement_to_dict(row, is_postgres=False):
             'date_creation': row[12]
         }
 
-# --- DASHBOARD ROUTES ---
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    user_id = session['user_id']
-    conn = get_db_connection()
-    cur = get_cursor(conn)
-    is_postgres = bool(os.environ.get('DATABASE_URL'))
 
-    try:
-        # Statistiques des objectifs
-        sql_objectifs = sql_placeholder('SELECT COUNT(*) FROM objectifs WHERE user_id = ? AND status = "actif"')
-        cur.execute(sql_objectifs, (user_id,))
-        total_objectifs = cur.fetchone()[0]
-
-        sql_epargne = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
-        cur.execute(sql_epargne, (user_id,))
-        total_epargne = cur.fetchone()[0] or 0
-        # Convertir le total vers la devise système
-        total_epargne_converti = convert_amount_to_system_currency(total_epargne, 'XAF')
-
-        # Statistiques des tâches
-        sql_taches = sql_placeholder('SELECT COUNT(*) FROM taches WHERE user_id = ?')
-        cur.execute(sql_taches, (user_id,))
-        total_taches = cur.fetchone()[0]
-
-        sql_taches_terminees = sql_placeholder('SELECT COUNT(*) FROM taches WHERE user_id = ? AND termine = TRUE')
-        cur.execute(sql_taches_terminees, (user_id,))
-        taches_terminees = cur.fetchone()[0]
-
-        # Statistiques des événements
-        sql_evenements = sql_placeholder('SELECT COUNT(*) FROM evenements WHERE user_id = ? AND termine = FALSE')
-        cur.execute(sql_evenements, (user_id,))
-        evenements_a_venir = cur.fetchone()[0]
-
-        # Objectifs proches de la fin
-        sql_objectifs_proches = sql_placeholder('''
-            SELECT id, nom, montant_cible, montant_actuel, date_limite, status, user_id
-            FROM objectifs
-            WHERE user_id = ? AND status = "actif"
-            ORDER BY (montant_cible - montant_actuel) ASC
-            LIMIT 3
-        ''')
-        cur.execute(sql_objectifs_proches, (user_id,))
-        objectifs_proches_raw = cur.fetchall()
-        objectifs_proches = [convert_to_dict(obj, is_postgres) for obj in objectifs_proches_raw]
-
-        # Convertir les montants des objectifs vers la devise système
-        for obj in objectifs_proches:
-            obj['montant_cible'] = convert_amount_to_system_currency(obj['montant_cible'], 'XAF')
-            obj['montant_actuel'] = convert_amount_to_system_currency(obj['montant_actuel'], 'XAF')
-
-        # Tâches prioritaires (non terminées)
-        sql_taches_prioritaires = sql_placeholder('''
-            SELECT id, user_id, titre, description, date_creation, date_modification, termine, ordre
-            FROM taches
-            WHERE user_id = ? AND termine = FALSE
-            ORDER BY date_creation ASC
-            LIMIT 5
-        ''')
-        cur.execute(sql_taches_prioritaires, (user_id,))
-        taches_prioritaires_raw = cur.fetchall()
-        taches_prioritaires = [convert_tache_to_dict(tache, is_postgres) for tache in taches_prioritaires_raw]
-
-    finally:
-        cur.close()
-        conn.close()
-
-    stats = {
-        'total_objectifs': total_objectifs,
-        'total_epargne': total_epargne_converti,
-        'total_taches': total_taches,
-        'taches_terminees': taches_terminees,
-        'evenements_a_venir': evenements_a_venir,
-        'objectifs_proches': objectifs_proches,
-        'taches_prioritaires': taches_prioritaires
-    }
-
-    return render_template('dashboard.html', stats=stats, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
 
 # --- NOTIFICATIONS ROUTES ---
 @app.route('/notifications')
@@ -1474,7 +1562,350 @@ def rapports():
         'performance_taches': performance_taches
     }
 
-    return render_template('rapports.html', stats=stats, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
+    return render_template('tab_content/rapports.html', stats=stats, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
+
+# --- ROUTES D'EXPORTATION ---
+@app.route('/export/pdf')
+@login_required
+def export_pdf():
+    """Export des données en PDF"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        # Récupérer toutes les données de l'utilisateur
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? ORDER BY id DESC')
+        cur.execute(sql_objectifs, (user_id,))
+        objectifs_raw = cur.fetchall()
+        objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
+
+        sql_taches = sql_placeholder('SELECT * FROM taches WHERE user_id = ? ORDER BY date_creation DESC')
+        cur.execute(sql_taches, (user_id,))
+        taches_raw = cur.fetchall()
+        taches = [convert_tache_to_dict(tache, is_postgres) for tache in taches_raw]
+
+        sql_evenements = sql_placeholder('SELECT * FROM evenements WHERE user_id = ? ORDER BY date_debut ASC')
+        cur.execute(sql_evenements, (user_id,))
+        evenements_raw = cur.fetchall()
+        evenements = [convert_evenement_to_dict(evenement, is_postgres) for evenement in evenements_raw]
+
+        # Calculer les statistiques
+        total_epargne = sum(obj['montant_actuel'] for obj in objectifs if obj['status'] == 'actif')
+        total_taches = len(taches)
+        taches_terminees = sum(1 for tache in taches if tache.get('termine', False))
+        taux_reussite = (taches_terminees / total_taches * 100) if total_taches > 0 else 0
+
+        # Créer le contenu HTML pour le PDF
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Rapport d'Épargne - {session['username']}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }}
+                .section {{ margin-bottom: 20px; }}
+                .section h2 {{ color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }}
+                table {{ width: 100%; border-collapse: collapse; margin-bottom: 15px; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+                .stats {{ display: flex; justify-content: space-between; margin-bottom: 20px; }}
+                .stat {{ text-align: center; padding: 10px; border: 1px solid #ddd; flex: 1; margin: 0 5px; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Rapport d'Épargne</h1>
+                <p>Généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>
+                <p>Utilisateur: {session['username']}</p>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <h3>Total Épargne</h3>
+                    <p>{format_currency(total_epargne)}</p>
+                </div>
+                <div class="stat">
+                    <h3>Objectifs Actifs</h3>
+                    <p>{len([obj for obj in objectifs if obj['status'] == 'actif'])}</p>
+                </div>
+                <div class="stat">
+                    <h3>Tâches Terminées</h3>
+                    <p>{taches_terminees}/{total_taches} ({taux_reussite:.1f}%)</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Objectifs d'Épargne</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Montant Cible</th>
+                            <th>Montant Actuel</th>
+                            <th>Progression</th>
+                            <th>Date Limite</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+
+        for obj in objectifs:
+            progression = (obj['montant_actuel'] / obj['montant_cible'] * 100) if obj['montant_cible'] > 0 else 0
+            html_content += f"""
+                        <tr>
+                            <td>{obj['nom']}</td>
+                            <td>{format_currency(obj['montant_cible'])}</td>
+                            <td>{format_currency(obj['montant_actuel'])}</td>
+                            <td>{progression:.1f}%</td>
+                            <td>{obj['date_limite'] or 'Non définie'}</td>
+                            <td>{obj['status']}</td>
+                        </tr>
+            """
+
+        html_content += """
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>Tâches</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Description</th>
+                            <th>Date Limite</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+
+        for tache in taches:
+            html_content += f"""
+                        <tr>
+                            <td>{tache['titre']}</td>
+                            <td>{tache.get('description', '')}</td>
+                            <td>{tache.get('date_limite', 'Non définie')}</td>
+                            <td>{'Terminée' if tache.get('termine', False) else 'En cours'}</td>
+                        </tr>
+            """
+
+        html_content += """
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>Événements</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Description</th>
+                            <th>Date Début</th>
+                            <th>Date Fin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+
+        for evenement in evenements:
+            html_content += f"""
+                        <tr>
+                            <td>{evenement['titre']}</td>
+                            <td>{evenement.get('description', '')}</td>
+                            <td>{evenement['date_debut']}</td>
+                            <td>{evenement.get('date_fin', 'Non définie')}</td>
+                        </tr>
+            """
+
+        html_content += """
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Retourner le HTML pour génération PDF côté client
+        return jsonify({
+            'success': True,
+            'html': html_content,
+            'filename': f'rapport_epargne_{session["username"]}_{datetime.now().strftime("%Y%m%d_%H%M")}.pdf'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/export/excel')
+@login_required
+def export_excel():
+    """Export des données en Excel (CSV)"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        # Récupérer toutes les données
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? ORDER BY id DESC')
+        cur.execute(sql_objectifs, (user_id,))
+        objectifs_raw = cur.fetchall()
+        objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
+
+        sql_taches = sql_placeholder('SELECT * FROM taches WHERE user_id = ? ORDER BY date_creation DESC')
+        cur.execute(sql_taches, (user_id,))
+        taches_raw = cur.fetchall()
+        taches = [convert_tache_to_dict(tache, is_postgres) for tache in taches_raw]
+
+        sql_evenements = sql_placeholder('SELECT * FROM evenements WHERE user_id = ? ORDER BY date_debut ASC')
+        cur.execute(sql_evenements, (user_id,))
+        evenements_raw = cur.fetchall()
+        evenements = [convert_evenement_to_dict(evenement, is_postgres) for evenement in evenements_raw]
+
+        # Créer le contenu CSV
+        csv_content = "Nom,Montant Cible,Montant Actuel,Progression,Date Limite,Statut\n"
+        for obj in objectifs:
+            progression = (obj['montant_actuel'] / obj['montant_cible'] * 100) if obj['montant_cible'] > 0 else 0
+            csv_content += f'"{obj["nom"]}",{obj["montant_cible"]},{obj["montant_actuel"]},{progression:.1f}%,{obj["date_limite"] or ""},{obj["status"]}\n'
+
+        csv_content += "\nTâches\n"
+        csv_content += "Titre,Description,Date Limite,Statut\n"
+        for tache in taches:
+            csv_content += f'"{tache["titre"]}","{tache.get("description", "")}",{tache.get("date_limite", "")},{"Terminée" if tache.get("termine", False) else "En cours"}\n'
+
+        csv_content += "\nÉvénements\n"
+        csv_content += "Titre,Description,Date Début,Date Fin\n"
+        for evenement in evenements:
+            csv_content += f'"{evenement["titre"]}","{evenement.get("description", "")}",{evenement["date_debut"]},{evenement.get("date_fin", "")}\n'
+
+        return jsonify({
+            'success': True,
+            'csv': csv_content,
+            'filename': f'donnees_epargne_{session["username"]}_{datetime.now().strftime("%Y%m%d_%H%M")}.csv'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/export/charts')
+@login_required
+def export_charts():
+    """Export des graphiques en image"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        # Récupérer les données pour les graphiques
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = "actif"')
+        cur.execute(sql_objectifs, (user_id,))
+        objectifs_raw = cur.fetchall()
+        objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
+
+        sql_taches = sql_placeholder('SELECT * FROM taches WHERE user_id = ?')
+        cur.execute(sql_taches, (user_id,))
+        taches_raw = cur.fetchall()
+        taches = [convert_tache_to_dict(tache, is_postgres) for tache in taches_raw]
+
+        # Calculer les statistiques
+        total_epargne = sum(obj['montant_actuel'] for obj in objectifs)
+        total_taches = len(taches)
+        taches_terminees = sum(1 for tache in taches if tache.get('termine', False))
+        taux_reussite = (taches_terminees / total_taches * 100) if total_taches > 0 else 0
+
+        # Créer les données pour les graphiques
+        chart_data = {
+            'objectifs': [
+                {
+                    'nom': obj['nom'],
+                    'montant_cible': obj['montant_cible'],
+                    'montant_actuel': obj['montant_actuel'],
+                    'progression': (obj['montant_actuel'] / obj['montant_cible'] * 100) if obj['montant_cible'] > 0 else 0
+                }
+                for obj in objectifs
+            ],
+            'stats': {
+                'total_epargne': total_epargne,
+                'total_objectifs': len(objectifs),
+                'total_taches': total_taches,
+                'taches_terminees': taches_terminees,
+                'taux_reussite': taux_reussite
+            }
+        }
+
+        return jsonify({
+            'success': True,
+            'chart_data': chart_data,
+            'filename': f'graphiques_epargne_{session["username"]}_{datetime.now().strftime("%Y%m%d_%H%M")}.png'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/export/print')
+@login_required
+def export_print():
+    """Préparation des données pour impression"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = get_cursor(conn)
+    is_postgres = bool(os.environ.get('DATABASE_URL'))
+
+    try:
+        # Récupérer les données essentielles
+        sql_objectifs = sql_placeholder('SELECT * FROM objectifs WHERE user_id = ? AND status = "actif" ORDER BY id DESC')
+        cur.execute(sql_objectifs, (user_id,))
+        objectifs_raw = cur.fetchall()
+        objectifs = [convert_to_dict(obj, is_postgres) for obj in objectifs_raw]
+
+        sql_taches = sql_placeholder('SELECT * FROM taches WHERE user_id = ? ORDER BY date_creation DESC LIMIT 10')
+        cur.execute(sql_taches, (user_id,))
+        taches_raw = cur.fetchall()
+        taches = [convert_tache_to_dict(tache, is_postgres) for tache in taches_raw]
+
+        # Calculer les statistiques
+        total_epargne = sum(obj['montant_actuel'] for obj in objectifs)
+        total_taches = len(taches)
+        taches_terminees = sum(1 for tache in taches if tache.get('termine', False))
+
+        print_data = {
+            'username': session['username'],
+            'date_export': datetime.now().strftime('%d/%m/%Y à %H:%M'),
+            'total_epargne': total_epargne,
+            'total_objectifs': len(objectifs),
+            'total_taches': total_taches,
+            'taches_terminees': taches_terminees,
+            'objectifs': objectifs,
+            'taches': taches
+        }
+
+        return jsonify({
+            'success': True,
+            'print_data': print_data
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
 
 # --- PARAMÈTRES AVANCÉS ROUTES ---
 @app.route('/parametres_avances')
@@ -1500,18 +1931,31 @@ def tab_content(tab_name):
             cur.execute(sql_objectifs, (user_id,))
             objectifs = cur.fetchall()
 
+            # Calculer l'épargne totale
+            sql_total_epargne = sql_placeholder('SELECT SUM(montant_actuel) FROM objectifs WHERE user_id = ? AND status = "actif"')
+            cur.execute(sql_total_epargne, (user_id,))
+            total_epargne = cur.fetchone()[0] or 0
+
             objectifs_list = []
             for row in objectifs:
                 if is_postgres:
-                    objectifs_list.append(dict(row))
+                    obj_dict = dict(row)
                 else:
-                    objectifs_list.append(convert_to_dict(row))
+                    obj_dict = convert_to_dict(row)
+
+                # Calculer la progression pour chaque objectif
+                if obj_dict['montant_cible'] > 0:
+                    obj_dict['progression'] = (obj_dict['montant_actuel'] / obj_dict['montant_cible']) * 100
+                else:
+                    obj_dict['progression'] = 0
+
+                objectifs_list.append(obj_dict)
 
         finally:
             cur.close()
             conn.close()
 
-        return render_template('tab_content/epargne.html', objectifs=objectifs_list, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
+        return render_template('tab_content/epargne.html', objectifs=objectifs_list, total_epargne=total_epargne, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
 
     elif tab_name == 'taches':
         # Contenu de la page des tâches
@@ -1525,17 +1969,58 @@ def tab_content(tab_name):
             taches = cur.fetchall()
 
             taches_list = []
+            total_taches = 0
+            taches_terminees = 0
+
             for row in taches:
                 if is_postgres:
-                    taches_list.append(dict(row))
+                    tache_dict = dict(row)
                 else:
-                    taches_list.append(convert_tache_to_dict(row))
+                    tache_dict = convert_tache_to_dict(row)
+
+                # Récupérer les étapes de cette tâche
+                sql_etapes = sql_placeholder('SELECT * FROM etapes WHERE tache_id = ? ORDER BY ordre ASC')
+                cur.execute(sql_etapes, (tache_dict['id'],))
+                etapes = cur.fetchall()
+
+                etapes_list = []
+                for etape_row in etapes:
+                    if is_postgres:
+                        etapes_list.append(dict(etape_row))
+                    else:
+                        etapes_list.append(convert_etape_to_dict(etape_row))
+
+                tache_dict['etapes'] = etapes_list
+
+                # Calculer la progression basée sur les étapes terminées
+                total_etapes = len(etapes_list)
+                etapes_terminees = sum(1 for etape in etapes_list if etape.get('terminee', False))
+
+                if total_etapes > 0:
+                    tache_dict['progression'] = (etapes_terminees / total_etapes) * 100
+                    tache_dict['etapes_terminees'] = etapes_terminees
+                    tache_dict['total_etapes'] = total_etapes
+                else:
+                    tache_dict['progression'] = 0
+                    tache_dict['etapes_terminees'] = 0
+                    tache_dict['total_etapes'] = 0
+
+                total_taches += 1
+                if tache_dict.get('termine', False):
+                    taches_terminees += 1
+
+                taches_list.append(tache_dict)
+
+            # Calculer le pourcentage de progression global
+            progression_globale = 0
+            if total_taches > 0:
+                progression_globale = (taches_terminees / total_taches) * 100
 
         finally:
             cur.close()
             conn.close()
 
-        return render_template('tab_content/taches.html', taches=taches_list)
+        return render_template('tab_content/taches.html', taches=taches_list, progression_globale=progression_globale, total_taches=total_taches, taches_terminees=taches_terminees)
 
     elif tab_name == 'agenda':
         # Contenu de la page agenda (calendrier)
@@ -1646,6 +2131,8 @@ def tab_content(tab_name):
 
         return render_template('tab_content/rapports.html', stats=stats, format_currency=format_currency, get_currency_symbol=get_currency_symbol)
 
+
+
     else:
         return "Onglet non trouvé", 404
 
@@ -1658,7 +2145,7 @@ if __name__ == '__main__':
         print("Base de données SQLite non trouvée, création...")
         conn = sqlite3.connect('epargne.db')
         cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, security_question TEXT, security_answer TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, security_question TEXT, security_answer TEXT, nom TEXT, prenom TEXT, date_naissance TEXT, telephone TEXT, email TEXT, sexe TEXT, photo_profil TEXT, bio TEXT, adresse TEXT, ville TEXT, pays TEXT DEFAULT 'Cameroun', date_creation_profil TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
         cur.execute("CREATE TABLE IF NOT EXISTS objectifs (id INTEGER PRIMARY KEY, nom TEXT NOT NULL, montant_cible REAL NOT NULL, montant_actuel REAL NOT NULL, date_limite TEXT, status TEXT NOT NULL DEFAULT 'actif', user_id INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id))")
         cur.execute("CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY, objectif_id INTEGER NOT NULL, montant REAL NOT NULL, type_transaction TEXT NOT NULL, date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, user_id INTEGER NOT NULL, FOREIGN KEY (objectif_id) REFERENCES objectifs (id), FOREIGN KEY (user_id) REFERENCES users (id))")
         cur.execute("CREATE TABLE IF NOT EXISTS taches (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, titre TEXT NOT NULL, description TEXT, date_limite TEXT, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP, date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP, termine BOOLEAN DEFAULT FALSE, ordre INTEGER DEFAULT 0, FOREIGN KEY (user_id) REFERENCES users (id))")

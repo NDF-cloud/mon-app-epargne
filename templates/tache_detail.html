@@ -3,560 +3,425 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Détail de la Tâche - OverView</title>
+    <title>Détail de la Tâche - OverView</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        .task-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
+            color: white;
+            padding: 30px 0;
             margin-bottom: 30px;
-            color: white;
-            text-align: center;
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: white;
-        }
-
-        .nav-tabs {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 5px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-tab {
-            padding: 12px 20px;
-            text-align: center;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-tab:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-tab.active {
-            background: rgba(255, 255, 255, 0.3);
+        .task-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
             font-weight: bold;
         }
 
-        .flash-messages {
-            margin-bottom: 20px;
+        .status-active {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
         }
 
-        .flash-message {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            font-weight: 500;
+        .status-completed {
+            background: rgba(0, 123, 255, 0.2);
+            color: #007bff;
+            border: 1px solid rgba(0, 123, 255, 0.3);
         }
 
-        .flash-success {
-            background: #c6f6d5;
-            color: #22543d;
-            border: 1px solid #9ae6b4;
-        }
-
-        .flash-error {
-            background: #fed7d7;
-            color: #742a2a;
-            border: 1px solid #feb2b2;
-        }
-
-        .task-detail {
-            background: rgba(255, 255, 255, 0.95);
+        .task-card {
+            background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            transition: transform 0.3s ease;
-        }
-
-        .task-detail:hover {
-            transform: translateY(-2px);
-        }
-
-        .task-header {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             margin-bottom: 25px;
         }
 
-        .task-title {
-            font-size: 28px;
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .task-description {
-            color: #4a5568;
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .task-progress {
-            margin-bottom: 25px;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .progress-text {
-            font-weight: 500;
-            color: #2d3748;
-        }
-
-        .progress-percentage {
-            font-weight: 600;
-            color: #667eea;
+        .progress-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
         }
 
         .progress-bar {
-            width: 100%;
             height: 12px;
-            background: #e2e8f0;
             border-radius: 6px;
-            overflow: hidden;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 6px;
-            transition: width 0.3s ease;
-        }
-
-        .steps-section h3 {
-            color: #2d3748;
-            font-size: 20px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .step-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: #f7fafc;
+        .etape-item {
+            background: white;
+            border: 1px solid #e9ecef;
             border-radius: 10px;
+            padding: 15px;
             margin-bottom: 10px;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+            transition: all 0.3s ease;
         }
 
-        .step-item:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
+        .etape-item:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .step-item.completed {
-            background: #c6f6d5;
-            border-color: #9ae6b4;
+        .etape-item.completed {
+            background: #f8fff9;
+            border-color: #28a745;
         }
 
-        .step-checkbox {
+        .etape-checkbox {
             width: 20px;
             height: 20px;
-            margin-right: 15px;
-            cursor: pointer;
-            accent-color: #667eea;
+            margin-right: 10px;
         }
 
-        .step-description {
-            flex: 1;
-            font-size: 16px;
-            color: #2d3748;
-            font-weight: 500;
-        }
-
-        .step-item.completed .step-description {
-            text-decoration: line-through;
-            color: #4a5568;
-        }
-
-        .step-number {
-            background: #667eea;
+        .btn-back {
+            background: rgba(255,255,255,0.2);
             color: white;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            margin-right: 15px;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
         }
 
-        .step-item.completed .step-number {
-            background: #48bb78;
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .nav-tabs {
-                flex-direction: column;
-            }
-
-            .task-detail {
-                padding: 20px;
-            }
-
-            .task-title {
-                font-size: 24px;
-            }
-
-            .step-item {
-                padding: 12px;
-            }
-
-            .step-description {
-                font-size: 14px;
-            }
+        .task-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
 
-        /* Styles pour les confettis */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: #f0f;
-            animation: confetti-fall 3s linear forwards;
-            z-index: 1000;
+        .meta-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
         }
 
-        @keyframes confetti-fall {
-            0% {
-                transform: translateY(-100vh) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(1080deg);
-                opacity: 0;
-            }
+        .meta-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
         }
 
-        .celebration-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            z-index: 999;
-            pointer-events: none;
-            animation: celebration-fade 4s ease-out forwards;
+        .meta-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
         }
 
-        @keyframes celebration-fade {
-            0% { opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { opacity: 0; }
+        /* Mode sombre pour la page détail tâche */
+        body.dark-mode {
+            background: linear-gradient(135deg, #4a5568 0%, #718096 100%);
+            color: #f7fafc;
+        }
+
+        .dark-mode .task-header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        }
+
+        .dark-mode .task-card {
+            background: rgba(45, 55, 72, 0.95);
+            color: #f7fafc;
+            border: 1px solid rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .progress-container {
+            background: rgba(74, 85, 104, 0.5);
+        }
+
+        .dark-mode .etape-item {
+            background: rgba(45, 55, 72, 0.95);
+            color: #f7fafc;
+            border-color: rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .etape-item.completed {
+            background: rgba(40, 167, 69, 0.1);
+            border-color: #28a745;
+        }
+
+        .dark-mode .etape-item:hover {
+            background: rgba(88, 103, 128, 0.5);
+        }
+
+        .dark-mode .meta-item {
+            background: rgba(74, 85, 104, 0.5);
+            color: #f7fafc;
+        }
+
+        .dark-mode .meta-label {
+            color: #cbd5e0;
+        }
+
+        .dark-mode .meta-value {
+            color: #76c7c0;
+        }
+
+        .dark-mode .btn-primary {
+            background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+            border-color: #76c7c0;
+        }
+
+        .dark-mode .btn-primary:hover {
+            background: linear-gradient(135deg, #5db3ac 0%, #4a8a92 100%);
+        }
+
+        .dark-mode .btn-outline-secondary {
+            color: #76c7c0;
+            border-color: #76c7c0;
+        }
+
+        .dark-mode .btn-outline-secondary:hover {
+            background-color: #76c7c0;
+            color: white;
+        }
+
+        .dark-mode .btn-danger {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            border-color: #e53e3e;
+        }
+
+        .dark-mode .btn-danger:hover {
+            background: linear-gradient(135deg, #c53030 0%, #a52a2a 100%);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>✅ Détail de la Tâche</h1>
-            <p>Gérez vos tâches et projets</p>
-        </div>
+    <script>
+        // Charger le thème au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+    </script>
 
-        <div style="text-align: right; margin-bottom: 20px;">
-            <a href="{{ url_for('taches') }}" style="display: inline-block; background: rgba(255, 255, 255, 0.2); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; transition: all 0.3s ease; backdrop-filter: blur(10px);" onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">← Retour</a>
-        </div>
-
-        <div class="nav-tabs">
-            <div class="nav-tab active">Tâches</div>
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash-message flash-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
+    <!-- En-tête de la tâche -->
+    <div class="task-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-tasks"></i> {{ tache.titre }}</h1>
+                    <p class="mb-0">
+                        <span class="task-status {% if tache.termine %}status-completed{% else %}status-active{% endif %}">
+                            {% if tache.termine %}
+                                <i class="fas fa-check-circle"></i> Terminée
+                            {% else %}
+                                <i class="fas fa-clock"></i> En cours
+                            {% endif %}
+                        </span>
+                    </p>
                 </div>
-            {% endif %}
-        {% endwith %}
-
-        <div class="task-detail">
-            <div class="task-header">
-                <h2 class="task-title">{{ tache.titre }}</h2>
-                {% if tache.description %}
-                    <p class="task-description">{{ tache.description }}</p>
-                {% endif %}
-                {% if tache.date_limite %}
-                    <div class="task-deadline">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <canvas id="urgency-detail" width="30" height="30" style="border-radius: 50%;"></canvas>
-                            <span id="countdown-detail" style="color: #e74c3c; font-weight: 600; font-size: 1.1em;">⏰ Calcul en cours...</span>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="task-progress">
-                <div class="progress-info">
-                    <span class="progress-text">Progression</span>
-                    <span class="progress-percentage">{{ progression }}%</span>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('app_with_tabs') }}" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </a>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ progression }}%"></div>
-                </div>
-            </div>
-
-            <div class="steps-section">
-                <h3>Étapes ({{ etapes|length }})</h3>
-                {% for etape in etapes %}
-                    <div class="step-item {% if etape.terminee %}completed{% endif %}" data-etape-id="{{ etape.id }}">
-                        <div class="step-number">{{ loop.index }}</div>
-                        <input type="checkbox"
-                               class="step-checkbox"
-                               {% if etape.terminee %}checked{% endif %}
-                               onchange="toggleEtape({{ tache.id }}, {{ etape.id }}, this)">
-                        <span class="step-description">{{ etape.description }}</span>
-                    </div>
-                {% endfor %}
             </div>
         </div>
     </div>
 
+    <div class="container">
+        <!-- Informations générales -->
+        <div class="task-card">
+            <h3><i class="fas fa-info-circle"></i> Informations générales</h3>
+
+            <div class="task-meta">
+                <div class="meta-item">
+                    <div class="meta-label">Date de création</div>
+                    <div class="meta-value">
+                        {{ tache.date_creation if tache.date_creation else 'N/A' }}
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Date limite</div>
+                    <div class="meta-value">
+                        {{ tache.date_limite if tache.date_limite else 'Aucune' }}
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Priorité</div>
+                    <div class="meta-value">
+                        {% if tache.priorite == 'haute' %}
+                            <span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Haute</span>
+                        {% elif tache.priorite == 'moyenne' %}
+                            <span class="text-warning"><i class="fas fa-minus"></i> Moyenne</span>
+                        {% else %}
+                            <span class="text-success"><i class="fas fa-arrow-down"></i> Basse</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Progression</div>
+                    <div class="meta-value">{{ "%.1f"|format(progression) }}%</div>
+                </div>
+            </div>
+
+            {% if tache.description %}
+            <div class="mt-3">
+                <h5><i class="fas fa-align-left"></i> Description</h5>
+                <p>{{ tache.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Progression -->
+        <div class="task-card">
+            <h3><i class="fas fa-chart-line"></i> Progression</h3>
+
+            <div class="progress-container">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Progression globale</span>
+                    <span>{{ "%.1f"|format(progression) }}%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ progression }}%"
+                         aria-valuenow="{{ progression }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">{{ tache.etapes_terminees }} / {{ tache.total_etapes }} étapes terminées</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Étapes -->
+        <div class="task-card">
+            <h3><i class="fas fa-list-ol"></i> Étapes ({{ etapes|length }})</h3>
+
+            {% if etapes %}
+                <div class="etapes-list">
+                    {% for etape in etapes %}
+                    <div class="etape-item {% if etape.terminee %}completed{% endif %}">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="etape-checkbox"
+                                   data-tache-id="{{ tache.id }}"
+                                   data-etape-id="{{ etape.id }}"
+                                   {% if etape.terminee %}checked{% endif %}
+                                   onchange="toggleEtape(this)">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 {% if etape.terminee %}text-decoration-line-through{% endif %}">
+                                    {{ etape.titre }}
+                                </h6>
+                                {% if etape.description %}
+                                <p class="mb-0 text-muted">{{ etape.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Aucune étape définie pour cette tâche.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="task-card">
+            <h3><i class="fas fa-cogs"></i> Actions</h3>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('formulaire_tache', tache_id=tache.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Modifier
+                </a>
+
+                <form method="POST" action="{{ url_for('supprimer_tache', tache_id=tache.id) }}"
+                      style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                </form>
+
+                <a href="{{ url_for('app_with_tabs') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        function toggleEtape(tacheId, etapeId, checkbox) {
+        function toggleEtape(checkbox) {
+            const tacheId = checkbox.dataset.tacheId;
+            const etapeId = checkbox.dataset.etapeId;
+            const isChecked = checkbox.checked;
+
             fetch(`/tache/${tacheId}/toggle_etape/${etapeId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({
+                    terminee: isChecked
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const stepItem = checkbox.closest('.step-item');
-                    const stepDescription = stepItem.querySelector('.step-description');
+                    // Mettre à jour l'apparence de l'étape
+                    const etapeItem = checkbox.closest('.etape-item');
+                    const etapeTitle = etapeItem.querySelector('h6');
 
-                    if (checkbox.checked) {
-                        stepItem.classList.add('completed');
-                        stepDescription.style.textDecoration = 'line-through';
-                        stepDescription.style.color = '#4a5568';
+                    if (isChecked) {
+                        etapeItem.classList.add('completed');
+                        etapeTitle.classList.add('text-decoration-line-through');
                     } else {
-                        stepItem.classList.remove('completed');
-                        stepDescription.style.textDecoration = 'none';
-                        stepDescription.style.color = '#2d3748';
+                        etapeItem.classList.remove('completed');
+                        etapeTitle.classList.remove('text-decoration-line-through');
                     }
 
-                    // Mettre à jour la progression si elle est fournie
-                    if (data.progression !== undefined) {
-                        const progressPercentage = document.querySelector('.progress-percentage');
-                        const progressFill = document.querySelector('.progress-fill');
-
-                        progressPercentage.textContent = data.progression + '%';
-                        progressFill.style.width = data.progression + '%';
-                    }
+                    // Mettre à jour la progression
+                    updateProgress();
                 } else {
-                    // Remettre la checkbox dans son état précédent en cas d'erreur
-                    checkbox.checked = !checkbox.checked;
-                    alert('Erreur lors de la mise à jour de l\'étape');
+                    // Remettre la checkbox dans son état précédent
+                    checkbox.checked = !isChecked;
+                    alert('Erreur lors de la mise à jour de l\'étape.');
                 }
             })
             .catch(error => {
                 console.error('Erreur:', error);
-                checkbox.checked = !checkbox.checked;
-                alert('Erreur lors de la mise à jour de l\'étape');
+                checkbox.checked = !isChecked;
+                alert('Erreur lors de la mise à jour de l\'étape.');
             });
         }
 
-                // Fonction pour créer des confettis
-        function createConfetti() {
-            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'];
-            const confettiCount = 300;
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.etape-checkbox');
+            const total = checkboxes.length;
+            const completed = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const progress = total > 0 ? (completed / total * 100) : 0;
 
-            // Créer l'overlay de célébration
-            const overlay = document.createElement('div');
-            overlay.className = 'celebration-overlay';
-            document.body.appendChild(overlay);
+            // Mettre à jour l'affichage de la progression
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.querySelector('.progress-container .d-flex span:last-child');
+            const progressDetails = document.querySelector('.progress-container small');
 
-            // Créer les confettis
-            for (let i = 0; i < confettiCount; i++) {
-                setTimeout(() => {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.animationDelay = Math.random() * 1 + 's';
-                    confetti.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
-                    document.body.appendChild(confetti);
-
-                    // Supprimer le confetti après l'animation
-                    setTimeout(() => {
-                        if (confetti.parentNode) {
-                            confetti.parentNode.removeChild(confetti);
-                        }
-                    }, 3000);
-                }, i * 10);
-            }
-
-            // Supprimer l'overlay après l'animation
-            setTimeout(() => {
-                if (overlay.parentNode) {
-                    overlay.parentNode.removeChild(overlay);
-                }
-            }, 3000);
+            if (progressBar) progressBar.style.width = progress + '%';
+            if (progressText) progressText.textContent = progress.toFixed(1) + '%';
+            if (progressDetails) progressDetails.textContent = `${completed} / ${total} étapes terminées`;
         }
-
-        // Fonction pour calculer le compte à rebours et l'urgence
-        function updateCountdown() {
-            const countdownElement = document.getElementById('countdown-detail');
-            if (!countdownElement) return;
-
-            const dateLimite = '{{ tache.date_limite }}';
-            if (!dateLimite) return;
-
-            const now = new Date();
-            const deadline = new Date(dateLimite);
-            const timeDiff = deadline - now;
-
-            if (timeDiff > 0) {
-                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-
-                let countdownText = '⏰ ';
-                if (days > 0) {
-                    countdownText += `${days}j ${hours}h`;
-                } else if (hours > 0) {
-                    countdownText += `${hours}h ${minutes}m`;
-                } else {
-                    countdownText += `${minutes}m`;
-                }
-
-                countdownElement.textContent = countdownText;
-
-                // Mettre à jour le diagramme d'urgence
-                updateUrgencyChartDetail(timeDiff, deadline);
-            } else {
-                countdownElement.textContent = '⏰ En retard !';
-                countdownElement.style.color = '#e74c3c';
-
-                // Diagramme rouge pour les tâches en retard
-                updateUrgencyChartDetail(0, deadline);
-            }
-        }
-
-        // Fonction pour dessiner le diagramme d'urgence (version détail)
-        function updateUrgencyChartDetail(timeDiff, deadline) {
-            const canvas = document.getElementById('urgency-detail');
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = 12;
-
-            // Calculer le pourcentage de temps écoulé
-            const totalTime = deadline - new Date(deadline.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 jours avant
-            const elapsedTime = deadline - new Date();
-            const percentage = Math.max(0, Math.min(1, (totalTime - elapsedTime) / totalTime));
-
-            // Déterminer la couleur basée sur l'urgence
-            let color;
-            if (timeDiff <= 0) {
-                color = '#e74c3c'; // Rouge pour en retard
-            } else if (timeDiff <= 24 * 60 * 60 * 1000) { // 1 jour
-                color = '#f39c12'; // Orange
-            } else if (timeDiff <= 3 * 24 * 60 * 60 * 1000) { // 3 jours
-                color = '#f1c40f'; // Jaune
-            } else {
-                color = '#27ae60'; // Vert
-            }
-
-            // Effacer le canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Dessiner le cercle de fond
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-            ctx.fillStyle = '#ecf0f1';
-            ctx.fill();
-
-            // Dessiner le cercle de progression
-            if (percentage > 0) {
-                const startAngle = -Math.PI / 2;
-                const endAngle = startAngle + (percentage * 2 * Math.PI);
-
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-                ctx.lineTo(centerX, centerY);
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
-        }
-
-        // Modifier la fonction toggleEtape pour déclencher les confettis quand la tâche est terminée
-        const originalToggleEtape = toggleEtape;
-        toggleEtape = function(tacheId, etapeId, checkbox) {
-            originalToggleEtape(tacheId, etapeId, checkbox);
-
-            // Vérifier si la tâche est terminée après la mise à jour
-            setTimeout(() => {
-                const allCheckboxes = document.querySelectorAll('.step-checkbox');
-                const checkedCheckboxes = document.querySelectorAll('.step-checkbox:checked');
-
-                if (allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length) {
-                    // Toutes les étapes sont cochées - la tâche est terminée !
-                    createConfetti();
-                }
-            }, 500);
-        };
-
-        // Initialiser le compte à rebours au chargement
-        updateCountdown();
-
-        // Mettre à jour le compte à rebours toutes les minutes
-        setInterval(updateCountdown, 60000);
     </script>
 </body>
 </html>

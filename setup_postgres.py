@@ -7,19 +7,19 @@ from psycopg2.extras import RealDictCursor
 
 def init_database():
     """Initialise la base de données PostgreSQL avec toutes les tables nécessaires"""
-    
+
     # Récupérer l'URL de la base de données depuis les variables d'environnement
     DATABASE_URL = os.getenv('DATABASE_URL')
-    
+
     if not DATABASE_URL:
         print("⚠️  DATABASE_URL non définie, utilisation de SQLite")
         return False
-    
+
     try:
         print("🔗 Connexion à la base de données PostgreSQL...")
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
-        
+
         print("🗑️  Suppression des anciennes tables (si elles existent)...")
         cur.execute("DROP TABLE IF EXISTS transactions CASCADE;")
         cur.execute("DROP TABLE IF EXISTS taches CASCADE;")
@@ -27,9 +27,9 @@ def init_database():
         cur.execute("DROP TABLE IF EXISTS evenements CASCADE;")
         cur.execute("DROP TABLE IF EXISTS objectifs CASCADE;")
         cur.execute("DROP TABLE IF EXISTS users CASCADE;")
-        
+
         print("🏗️  Création de la structure des tables...")
-        
+
         # Table users
         cur.execute('''
         CREATE TABLE users (
@@ -48,7 +48,7 @@ def init_database():
             auto_delete_days INTEGER DEFAULT 90
         );
         ''')
-        
+
         # Table objectifs
         cur.execute('''
         CREATE TABLE objectifs (
@@ -61,7 +61,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table transactions
         cur.execute('''
         CREATE TABLE transactions (
@@ -73,7 +73,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table taches
         cur.execute('''
         CREATE TABLE taches (
@@ -87,7 +87,7 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         # Table etapes
         cur.execute('''
         CREATE TABLE etapes (
@@ -98,7 +98,7 @@ def init_database():
             ordre INTEGER DEFAULT 0
         );
         ''')
-        
+
         # Table evenements
         cur.execute('''
         CREATE TABLE evenements (
@@ -114,14 +114,14 @@ def init_database():
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
         );
         ''')
-        
+
         print("✅ Structure des tables créée avec succès.")
         conn.commit()
         cur.close()
         conn.close()
         print("🔒 Connexion fermée.")
         return True
-        
+
     except Exception as e:
         print(f"❌ Erreur lors de l'initialisation de la base de données: {e}")
         return False

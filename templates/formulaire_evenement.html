@@ -340,8 +340,8 @@
             <h1>📅 {% if evenement %}Modifier{% else %}Ajouter{% endif %} un événement</h1>
             <p>Gérez vos événements et rendez-vous</p>
             <div style="margin-top: 15px;">
-                <a href="{{ url_for('calendrier') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Retour
+                <a href="{{ url_for('app_with_tabs') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour à l'application
                 </a>
             </div>
         </div>
@@ -450,7 +450,7 @@
                 </div>
 
                 <div style="margin-top: 30px; text-align: center;">
-                    <a href="{{ url_for('calendrier') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('app_with_tabs') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Annuler
                     </a>
                     <button type="submit" class="btn btn-primary">

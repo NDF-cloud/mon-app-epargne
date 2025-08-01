@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Utilisateur - OverView</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <style>
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .profile-avatar-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+            border: 4px solid white;
+        }
+
+        .profile-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .photo-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload-area:hover {
+            border-color: #5a6fd8;
+            background: #e9ecef;
+        }
+
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Mode sombre pour la page profil */
+        body.dark-mode {
+            background: linear-gradient(135deg, #4a5568 0%, #718096 100%);
+            color: #f7fafc;
+        }
+
+        .dark-mode .profile-header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        }
+
+        .dark-mode .profile-form {
+            background: rgba(45, 55, 72, 0.95);
+            color: #f7fafc;
+            border: 1px solid rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .form-section {
+            border-bottom-color: rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .section-title {
+            color: #76c7c0;
+        }
+
+        .dark-mode .photo-upload-area {
+            background: rgba(74, 85, 104, 0.5);
+            border-color: #76c7c0;
+        }
+
+        .dark-mode .photo-upload-area:hover {
+            background: rgba(88, 103, 128, 0.5);
+            border-color: #5db3ac;
+        }
+
+        .dark-mode .stat-card {
+            background: rgba(45, 55, 72, 0.95);
+            color: #f7fafc;
+            border: 1px solid rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .stat-number {
+            color: #76c7c0;
+        }
+
+        .dark-mode .stat-label {
+            color: #cbd5e0;
+        }
+
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background: rgba(74, 85, 104, 0.9);
+            color: #f7fafc;
+            border-color: #718096;
+        }
+
+        .dark-mode .form-control:focus,
+        .dark-mode .form-select:focus {
+            border-color: #76c7c0;
+            box-shadow: 0 0 0 3px rgba(118, 199, 192, 0.2);
+        }
+
+        .dark-mode .form-label {
+            color: #76c7c0;
+        }
+
+        .dark-mode .btn-primary {
+            background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
+            border-color: #76c7c0;
+        }
+
+        .dark-mode .btn-primary:hover {
+            background: linear-gradient(135deg, #5db3ac 0%, #4a8a92 100%);
+        }
+
+        .dark-mode .btn-outline-secondary {
+            color: #76c7c0;
+            border-color: #76c7c0;
+        }
+
+        .dark-mode .btn-outline-secondary:hover {
+            background-color: #76c7c0;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Charger le thème au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+    </script>
+    <!-- En-tête du profil -->
+    <div class="profile-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    {% if profil.photo_profil %}
+                        <img src="{{ url_for('static', filename=profil.photo_profil) }}" alt="Photo de profil" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <h1>
+                        {% if profil.prenom and profil.nom %}
+                            {{ profil.prenom }} {{ profil.nom }}
+                        {% elif profil.prenom %}
+                            {{ profil.prenom }}
+                        {% elif profil.nom %}
+                            {{ profil.nom }}
+                        {% else %}
+                            {{ profil.username }}
+                        {% endif %}
+                    </h1>
+                    <p class="mb-0">
+                        <i class="fas fa-at"></i> {{ profil.username }}
+                        {% if profil.ville %}
+                            <i class="fas fa-map-marker-alt ms-3"></i> {{ profil.ville }}, {{ profil.pays }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-2 text-end">
+                    <a href="{{ url_for('app_with_tabs') }}" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistiques rapides -->
+        <div class="profile-stats">
+            <div class="stat-card">
+                <div class="stat-number">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                </div>
+                <div class="stat-label">Membre depuis</div>
+                <div class="stat-number">
+                    {% if profil.date_creation_profil %}
+                        {{ profil.date_creation_profil.strftime('%d/%m/%Y') if profil.date_creation_profil else 'N/A' }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    <i class="fas fa-user text-success"></i>
+                </div>
+                <div class="stat-label">Sexe</div>
+                <div class="stat-number">
+                    {% if profil.sexe %}
+                        {{ profil.sexe }}
+                    {% else %}
+                        Non spécifié
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    <i class="fas fa-map-marker-alt text-warning"></i>
+                </div>
+                <div class="stat-label">Localisation</div>
+                <div class="stat-number">
+                    {% if profil.ville %}
+                        {{ profil.ville }}
+                    {% else %}
+                        Non spécifiée
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire de profil -->
+        <div class="profile-form">
+            <form action="{{ url_for('update_profil') }}" method="POST" enctype="multipart/form-data">
+                <!-- Section Photo de profil -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-camera"></i>
+                        Photo de profil
+                    </h3>
+                    <div class="photo-upload-area">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h5>Choisir une photo</h5>
+                        <p class="text-muted">Formats acceptés : JPG, PNG, GIF (max 5MB)</p>
+                        <input type="file" name="photo_profil" id="photo_profil" class="form-control" accept="image/*">
+                        <div id="photo_preview" class="mt-3" style="display: none;">
+                            <img id="preview_img" class="photo-preview">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Informations personnelles -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-user"></i>
+                        Informations personnelles
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="prenom" class="form-label">Prénom *</label>
+                            <input type="text" class="form-control" id="prenom" name="prenom"
+                                   value="{{ profil.prenom or '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nom" class="form-label">Nom *</label>
+                            <input type="text" class="form-control" id="nom" name="nom"
+                                   value="{{ profil.nom or '' }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_naissance" class="form-label">Date de naissance</label>
+                            <input type="date" class="form-control" id="date_naissance" name="date_naissance"
+                                   value="{{ profil.date_naissance or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sexe" class="form-label">Sexe</label>
+                            <select class="form-select" id="sexe" name="sexe">
+                                <option value="">Sélectionner...</option>
+                                <option value="Homme" {% if profil.sexe == 'Homme' %}selected{% endif %}>Homme</option>
+                                <option value="Femme" {% if profil.sexe == 'Femme' %}selected{% endif %}>Femme</option>
+                                <option value="Autre" {% if profil.sexe == 'Autre' %}selected{% endif %}>Autre</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Contact -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-phone"></i>
+                        Informations de contact
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telephone" class="form-label">Numéro de téléphone</label>
+                            <input type="tel" class="form-control" id="telephone" name="telephone"
+                                   value="{{ profil.telephone or '' }}" placeholder="+237 XXX XXX XXX">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Adresse email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ profil.email or '' }}" placeholder="exemple@email.com">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Adresse -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Adresse
+                    </h3>
+                    <div class="mb-3">
+                        <label for="adresse" class="form-label">Adresse complète</label>
+                        <textarea class="form-control" id="adresse" name="adresse" rows="3"
+                                  placeholder="Rue, quartier, etc.">{{ profil.adresse or '' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ville" class="form-label">Ville</label>
+                            <input type="text" class="form-control" id="ville" name="ville"
+                                   value="{{ profil.ville or '' }}" placeholder="Douala, Yaoundé, etc.">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pays" class="form-label">Pays</label>
+                            <input type="text" class="form-control" id="pays" name="pays"
+                                   value="{{ profil.pays or 'Cameroun' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Bio -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-quote-left"></i>
+                        À propos de moi
+                    </h3>
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Biographie</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="4"
+                                  placeholder="Parlez-nous un peu de vous...">{{ profil.bio or '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Sauvegarder le profil
+                    </button>
+                    <a href="{{ url_for('app_with_tabs') }}" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="fas fa-times"></i> Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Prévisualisation de la photo
+        document.getElementById('photo_profil').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview_img').src = e.target.result;
+                    document.getElementById('photo_preview').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Validation du formulaire
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const prenom = document.getElementById('prenom').value.trim();
+            const nom = document.getElementById('nom').value.trim();
+
+            if (!prenom && !nom) {
+                e.preventDefault();
+                alert('Veuillez remplir au moins le prénom ou le nom.');
+                return false;
+            }
+        });
+
+        // Animation des cartes de statistiques
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    </script>
+</body>
+</html>

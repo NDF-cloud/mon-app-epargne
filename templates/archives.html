@@ -206,7 +206,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-link">← Retour aux objectifs actifs</a>
+        <a href="{{ url_for('app_with_tabs') }}" class="back-link">← Retour aux objectifs actifs</a>
 
         <div class="header">
             <h1>🏆 Mes Succès - Archives</h1>
@@ -238,7 +238,7 @@
                         <span class="objectif-nom">{{ obj.nom }}</span>
                     </div>
                     <div class="objectif-footer">
-                        <span>💰 Montant final : {{ format_currency(obj.montant_cible) }}</span>
+                        <span>💰 Montant final : {{ format_currency(obj.montant_cible, get_currency_symbol()) }}</span>
                     </div>
                 </div>
                 <div class="objectif-actions">

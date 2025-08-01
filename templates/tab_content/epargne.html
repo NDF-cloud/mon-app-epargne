@@ -1,411 +1,351 @@
 <!-- Contenu de l'onglet Épargne -->
-<div class="tab-content active">
-    <div class="epargne-container">
-        <div class="epargne-header">
-            <h2><i class="fas fa-piggy-bank"></i> Mes Objectifs d'Épargne</h2>
+<div class="tab-content active" id="epargne-content">
+    <div class="total-container">
+        <h3>💰 Épargne Totale Active</h3>
+        <div class="total-solde">
+            <span id="solde-masque">****** {{ get_currency_symbol() }}</span>
+            <span id="solde-reel" style="display:none;">{{ format_currency(total_epargne) }}</span>
+            <button id="toggle-solde" title="Afficher/Cacher le solde">👁</button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="archives-link">
+            <a href="{{ url_for('archives') }}" class="btn btn-outline-secondary">
+                🏆 Voir mes objectifs terminés (Archives)
+            </a>
+        </div>
+        <div class="add-objectif-link">
             <a href="{{ url_for('formulaire_objectif') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Nouvel Objectif
             </a>
         </div>
-
-        {% if objectifs %}
-            <div class="objectifs-grid">
-                {% for objectif in objectifs %}
-                    <div class="objectif-card">
-                        <div class="objectif-header">
-                            <h3 class="objectif-title">{{ objectif.nom }}</h3>
-                            <span class="objectif-status {% if objectif.status == 'actif' %}active{% else %}inactive{% endif %}">
-                                {{ objectif.status }}
-                            </span>
-                        </div>
-
-                        <div class="progress-container">
-                            {% set pourcentage = (objectif.montant_actuel / objectif.montant_cible * 100) if objectif.montant_cible > 0 else 0 %}
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: {{ pourcentage }}%;"></div>
-                            </div>
-                            <div class="progress-text">{{ "%.1f"|format(pourcentage) }}%</div>
-                        </div>
-
-                        <div class="objectif-amounts">
-                            <div class="amount-item">
-                                <span class="amount-label">Actuel</span>
-                                <span class="amount-value">{{ format_currency(objectif.montant_actuel) }}</span>
-                            </div>
-                            <div class="amount-item">
-                                <span class="amount-label">Objectif</span>
-                                <span class="amount-value">{{ format_currency(objectif.montant_cible) }}</span>
-                            </div>
-                        </div>
-
-                        {% if objectif.date_limite %}
-                            <div class="objectif-date">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span>Date limite: {{ objectif.date_limite }}</span>
-                            </div>
-                        {% endif %}
-
-                        <div class="objectif-actions">
-                            <a href="{{ url_for('objectif_detail', objectif_id=objectif.id) }}" class="btn btn-outline">
-                                <i class="fas fa-eye"></i> Détails
-                            </a>
-                            <a href="{{ url_for('formulaire_objectif', objectif_id=objectif.id) }}" class="btn btn-outline">
-                                <i class="fas fa-edit"></i> Modifier
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-piggy-bank"></i>
-                </div>
-                <h3>Aucun objectif d'épargne</h3>
-                <p>Commencez par créer votre premier objectif d'épargne</p>
-                <a href="{{ url_for('formulaire_objectif') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Créer un objectif
-                </a>
-            </div>
-        {% endif %}
     </div>
+
+    <ul class="objectifs-list">
+        {% for obj in objectifs %}
+        <li class="objectif-item">
+            <a href="{{ url_for('objectif_detail', objectif_id=obj.id) }}" class="main-link">
+                <div class="objectif-header">
+                    <span class="objectif-nom">{{ obj.nom }}</span>
+                    <span class="objectif-progression-text">{{ "%.1f"|format(obj.progression) }}%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ obj.progression }}%;"></div>
+                </div>
+                {% if obj.date_limite %}
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                    <canvas id="urgency-objectif-{{ obj.id }}" width="20" height="20" style="border-radius: 50%;"></canvas>
+                    <span id="countdown-objectif-{{ obj.id }}" style="color: #e74c3c; font-weight: 600; font-size: 0.9em;">⏰ Calcul en cours...</span>
+                </div>
+                {% endif %}
+            </a>
+            <div class="objectif-actions">
+                <form id="form-delete-{{ obj.id }}" action="{{ url_for('supprimer_objectif', objectif_id=obj.id) }}" method="post">
+                    <input type="hidden" name="password">
+                    <button type="button" onclick="confirmerSuppression({{ obj.id }})">Supprimer</button>
+                </form>
+            </div>
+        </li>
+        {% else %}
+        <li class="objectif-item" style="display:block; text-align:center; padding: 20px;">Aucun objectif actif. Cliquez sur le '+' pour commencer !</li>
+        {% endfor %}
+    </ul>
 </div>
 
 <style>
-    .epargne-container {
-        padding: 20px;
-    }
-
-    .epargne-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
+    .total-container {
         background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .dark-mode .epargne-header {
-        background-color: rgba(30, 30, 30, 0.95);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .epargne-header h2 {
-        color: #667eea;
-        margin: 0;
-        font-size: 1.8em;
-    }
-
-    .dark-mode .epargne-header h2 {
-        color: #76c7c0;
-    }
-
-    .objectifs-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 20px;
-    }
-
-    .objectif-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
         padding: 25px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin-bottom: 30px;
     }
-
-    .objectif-card:hover {
+    .total-container h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+    }
+    .total-solde {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+    }
+    #toggle-solde {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+    }
+    .objectifs-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .objectif-item {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        margin-bottom: 20px;
+    }
+    .objectif-item:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     }
-
-    .dark-mode .objectif-card {
-        background-color: rgba(30, 30, 30, 0.95);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    .objectif-item a.main-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
     }
-
     .objectif-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
+        align-items: center;
+        margin-bottom: 15px;
     }
-
-    .objectif-title {
-        color: #333;
-        margin: 0;
+    .objectif-nom {
+        font-weight: bold;
         font-size: 1.3em;
-        font-weight: 600;
+        color: #667eea;
     }
-
-    .dark-mode .objectif-title {
-        color: #e0e0e0;
+    .objectif-progression-text {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
     }
-
-    .objectif-status {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .objectif-status.active {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-    }
-
-    .objectif-status.inactive {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        color: white;
-    }
-
     .progress-container {
-        margin-bottom: 20px;
-    }
-
-    .progress-bar {
         width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        margin-top: 10px;
         height: 8px;
-        background: rgba(0, 0, 0, 0.1);
-        border-radius: 4px;
         overflow: hidden;
-        margin-bottom: 8px;
     }
-
-    .dark-mode .progress-bar {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .progress-fill {
+    .progress-bar {
+        background: linear-gradient(90deg, #667eea, #764ba2);
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        border-radius: 4px;
         transition: width 0.3s ease;
     }
-
-    .progress-text {
-        text-align: center;
-        font-size: 0.9em;
-        color: #666;
-        font-weight: 600;
-    }
-
-    .dark-mode .progress-text {
-        color: #aaa;
-    }
-
-    .objectif-amounts {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .amount-item {
-        text-align: center;
-        padding: 15px;
-        background: rgba(102, 126, 234, 0.05);
-        border-radius: 10px;
-        border: 1px solid rgba(102, 126, 234, 0.1);
-    }
-
-    .dark-mode .amount-item {
-        background: rgba(118, 199, 192, 0.1);
-        border-color: rgba(118, 199, 192, 0.2);
-    }
-
-    .amount-label {
-        display: block;
-        font-size: 0.8em;
-        color: #666;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    .dark-mode .amount-label {
-        color: #aaa;
-    }
-
-    .amount-value {
-        display: block;
-        font-size: 1.2em;
-        font-weight: 700;
-        color: #667eea;
-    }
-
-    .dark-mode .amount-value {
-        color: #76c7c0;
-    }
-
-    .objectif-date {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        padding: 10px;
-        background: rgba(255, 193, 7, 0.1);
-        border-radius: 8px;
-        font-size: 0.9em;
-        color: #856404;
-    }
-
-    .dark-mode .objectif-date {
-        background: rgba(255, 193, 7, 0.2);
-        color: #ffc107;
-    }
-
     .objectif-actions {
-        display: flex;
-        gap: 10px;
+        margin-top: 15px;
+        text-align: right;
     }
-
-    .btn {
-        padding: 10px 20px;
+    .objectif-actions button {
+        background: none;
         border: none;
-        border-radius: 8px;
-        font-size: 0.9em;
-        font-weight: 600;
+        color: #e74c3c;
         cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        transition: all 0.3s;
-        flex: 1;
-        justify-content: center;
+        text-decoration: underline;
+        font-size: 0.9em;
     }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    .dark-mode .btn-primary {
-        background: linear-gradient(135deg, #76c7c0 0%, #5a9ca4 100%);
-        box-shadow: 0 2px 10px rgba(118, 199, 192, 0.3);
-    }
-
-    .dark-mode .btn-primary:hover {
-        box-shadow: 0 4px 15px rgba(118, 199, 192, 0.4);
-    }
-
-    .btn-outline {
-        background: transparent;
-        color: #667eea;
-        border: 2px solid #667eea;
-    }
-
-    .btn-outline:hover {
-        background: #667eea;
-        color: white;
-        transform: translateY(-2px);
-    }
-
-    .dark-mode .btn-outline {
-        color: #76c7c0;
-        border-color: #76c7c0;
-    }
-
-    .dark-mode .btn-outline:hover {
-        background: #76c7c0;
-        color: #1a1a2e;
-    }
-
-    .empty-state {
+    .flash-messages {
+        margin: 15px 0;
         text-align: center;
-        padding: 60px 20px;
-        background: rgba(255, 255, 255, 0.95);
+    }
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .archives-link {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+    }
+    .archives-link a {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 25px;
+        display: inline-block;
+        transition: all 0.3s ease;
         backdrop-filter: blur(10px);
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .dark-mode .empty-state {
-        background-color: rgba(30, 30, 30, 0.95);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .empty-icon {
-        font-size: 4em;
-        color: #ccc;
-        margin-bottom: 20px;
-    }
-
-    .dark-mode .empty-icon {
-        color: #555;
-    }
-
-    .empty-state h3 {
-        color: #666;
-        margin-bottom: 10px;
-        font-size: 1.5em;
-    }
-
-    .dark-mode .empty-state h3 {
-        color: #aaa;
-    }
-
-    .empty-state p {
-        color: #999;
-        margin-bottom: 30px;
+        border: 1px solid rgba(255,255,255,0.3);
         font-size: 1.1em;
     }
-
-    .dark-mode .empty-state p {
-        color: #777;
+    .archives-link a:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* Styles Responsive */
-    @media (max-width: 768px) {
-        .epargne-header {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-        }
-
-        .epargne-header h2 {
-            font-size: 1.5em;
-        }
-
-        .objectifs-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .objectif-amounts {
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-
-        .objectif-actions {
-            flex-direction: column;
-        }
+    /* Mode sombre */
+    body.dark-mode .total-container,
+    body.dark-mode .objectif-item {
+        background-color: rgba(30, 30, 30, 0.95);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
-
-    @media (max-width: 480px) {
-        .epargne-container {
-            padding: 10px;
-        }
-
-        .objectif-card {
-            padding: 20px;
-        }
-
-        .objectif-header {
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-start;
-        }
+    body.dark-mode .objectif-nom {
+        color: #76c7c0;
+    }
+    body.dark-mode .progress-container {
+        background-color: #424242;
     }
 </style>
+
+<script>
+    // Fonction pour calculer le compte à rebours des objectifs
+    function updateObjectifCountdowns() {
+        const countdownElements = document.querySelectorAll('[id^="countdown-objectif-"]');
+
+        countdownElements.forEach(element => {
+            const objectifId = element.id.replace('countdown-objectif-', '');
+            const dateLimite = getDateLimiteForObjectif(objectifId);
+
+            if (dateLimite) {
+                const now = new Date();
+                const deadline = new Date(dateLimite);
+                const timeDiff = deadline - now;
+
+                if (timeDiff > 0) {
+                    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+                    let countdownText = '⏰ ';
+                    if (days > 0) {
+                        countdownText += `${days}j ${hours}h`;
+                    } else if (hours > 0) {
+                        countdownText += `${hours}h ${minutes}m`;
+                    } else {
+                        countdownText += `${minutes}m`;
+                    }
+
+                    element.textContent = countdownText;
+
+                    // Mettre à jour le diagramme d'urgence
+                    updateObjectifUrgencyChart(objectifId, timeDiff, deadline);
+                } else {
+                    element.textContent = '⏰ En retard !';
+                    element.style.color = '#e74c3c';
+
+                    // Diagramme rouge pour les objectifs en retard
+                    updateObjectifUrgencyChart(objectifId, 0, deadline);
+                }
+            }
+        });
+    }
+
+    // Fonction pour dessiner le diagramme d'urgence des objectifs
+    function updateObjectifUrgencyChart(objectifId, timeDiff, deadline) {
+        const canvas = document.getElementById(`urgency-objectif-${objectifId}`);
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 8;
+
+        // Calculer le pourcentage de temps écoulé
+        const totalTime = deadline - new Date(deadline.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 jours avant
+        const elapsedTime = deadline - new Date();
+        const percentage = Math.max(0, Math.min(1, (totalTime - elapsedTime) / totalTime));
+
+        // Déterminer la couleur basée sur l'urgence
+        let color;
+        if (timeDiff <= 0) {
+            color = '#e74c3c'; // Rouge pour en retard
+        } else if (timeDiff <= 24 * 60 * 60 * 1000) { // 1 jour
+            color = '#f39c12'; // Orange
+        } else if (timeDiff <= 3 * 24 * 60 * 60 * 1000) { // 3 jours
+            color = '#f1c40f'; // Jaune
+        } else {
+            color = '#27ae60'; // Vert
+        }
+
+        // Effacer le canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Dessiner le cercle de fond
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ecf0f1';
+        ctx.fill();
+
+        // Dessiner le cercle de progression
+        if (percentage > 0) {
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + (percentage * 2 * Math.PI);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineTo(centerX, centerY);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+    }
+
+    // Fonction pour récupérer la date limite des objectifs
+    function getDateLimiteForObjectif(objectifId) {
+        const objectifsData = {{ objectifs|tojson }};
+        const objectif = objectifsData.find(o => o.id == objectifId);
+        return objectif ? objectif.date_limite : null;
+    }
+
+    document.getElementById('toggle-solde').addEventListener('click', () => {
+        const soldeReel = document.getElementById('solde-reel');
+        const soldeMasque = document.getElementById('solde-masque');
+        if (soldeReel.style.display === 'inline') {
+            soldeReel.style.display = 'none';
+            soldeMasque.style.display = 'inline';
+            return;
+        }
+        const password = prompt("Veuillez entrer votre mot de passe pour afficher le solde :");
+        if (password !== null) {
+            fetch('/api/check_user_password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    soldeMasque.style.display = 'none';
+                    soldeReel.style.display = 'inline';
+                } else { alert('Mot de passe incorrect !'); }
+            });
+        }
+    });
+
+    function confirmerSuppression(objectifId) {
+        const confirmation = confirm("Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cet objectif ?");
+        if (confirmation) {
+            const password = prompt("Pour confirmer la suppression, veuillez entrer votre mot de passe :");
+            if (password !== null) {
+                const form = document.getElementById('form-delete-' + objectifId);
+                form.querySelector('input[name="password"]').value = password;
+                form.submit();
+            }
+        }
+    }
+
+    // Initialiser et mettre à jour les compteurs d'objectifs
+    updateObjectifCountdowns();
+
+    // Mettre à jour les compteurs toutes les minutes
+    setInterval(updateObjectifCountdowns, 60000);
+</script>

@@ -1,7 +1,7 @@
 let isMobile = window.innerWidth <= 768;
 let scrollTimeout;
 let isScrolling = false;
-let currentTab = 'epargne'; // Onglet par défaut
+let currentTab = 'dashboard'; // Onglet par défaut
 
 // Titres dynamiques pour chaque onglet
 const tabTitles = {
@@ -28,7 +28,8 @@ const tabTitles = {
     'rapports': {
         title: 'Rapports',
         subtitle: 'Exportez vos données'
-    }
+    },
+
 };
 
 // Fonction pour détecter si on est sur mobile
@@ -205,13 +206,39 @@ document.addEventListener('DOMContentLoaded', function() {
 // Fonction pour basculer le mode sombre
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+    localStorage.setItem('theme', theme);
+
+    // Mettre à jour tous les boutons theme-toggle
+    const themeToggles = document.querySelectorAll('#theme-toggle');
+    themeToggles.forEach(toggle => {
+        toggle.textContent = theme === 'dark' ? 'Désactiver le Mode Nuit' : 'Activer le Mode Nuit';
+    });
 }
 
-// Charger le mode sombre depuis le localStorage
-document.addEventListener('DOMContentLoaded', function() {
-    const darkMode = localStorage.getItem('darkMode') === 'true';
-    if (darkMode) {
+// Fonction pour charger le thème depuis le localStorage
+function loadTheme() {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
         document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
     }
+}
+
+// Fonction pour initialiser les boutons theme-toggle
+function initThemeToggles() {
+    const themeToggles = document.querySelectorAll('#theme-toggle');
+    themeToggles.forEach(toggle => {
+        const theme = localStorage.getItem('theme');
+        toggle.textContent = theme === 'dark' ? 'Désactiver le Mode Nuit' : 'Activer le Mode Nuit';
+
+        toggle.addEventListener('click', toggleDarkMode);
+    });
+}
+
+// Charger le thème et initialiser les boutons
+document.addEventListener('DOMContentLoaded', function() {
+    loadTheme();
+    initThemeToggles();
 });

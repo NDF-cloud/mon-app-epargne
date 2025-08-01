@@ -3,13 +3,71 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Mes Tâches</h2>
+                                 <h2>📋 Mes Tâches</h2>
                 <a href="{{ url_for('formulaire_tache') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nouvelle Tâche
                 </a>
             </div>
         </div>
     </div>
+
+    <!-- Diagramme de progression globale avec graphique circulaire -->
+    {% if total_taches > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Progression globale des tâches</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: {{ progression_globale }}%;"
+                                     aria-valuenow="{{ progression_globale }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    {{ "%.1f"|format(progression_globale) }}%
+                                </div>
+                            </div>
+                            <div class="stats-container">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <span class="stat-number text-success">{{ taches_terminees }}</span>
+                                            <span class="stat-label">Terminées</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <span class="stat-number text-warning">{{ total_taches - taches_terminees }}</span>
+                                            <span class="stat-label">En cours</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <span class="stat-number text-primary">{{ total_taches }}</span>
+                                            <span class="stat-label">Total</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <canvas id="tasksChart" width="200" height="200"></canvas>
+                                <div class="mt-2">
+                                    <small class="text-muted">Répartition des tâches</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if taches %}
         <div class="row">
@@ -30,6 +88,32 @@
                                 <p class="card-text text-muted mb-3">{{ tache.description }}</p>
                             {% endif %}
 
+                            <!-- Barre de progression individuelle pour chaque tâche -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">Progression</small>
+                                    <small class="text-muted">
+                                        {{ "%.0f"|format(tache.progression) }}%
+                                    </small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar {% if tache.progression == 100 %}bg-success{% elif tache.progression > 50 %}bg-info{% else %}bg-warning{% endif %}"
+                                         role="progressbar"
+                                         style="width: {{ tache.progression }}%;"
+                                         aria-valuenow="{{ tache.progression }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {{ tache.etapes_terminees }} / {{ tache.total_etapes }} étapes terminées
+                                </small>
+                                <!-- Debug info -->
+                                <small class="text-muted d-block mt-1">
+                                    Debug: Tâche {{ tache.id }} - Terminée: {{ tache.termine }} - Progression: {{ tache.progression }}
+                                </small>
+                            </div>
+
                             {% if tache.date_limite %}
                                 <div class="mb-3">
                                     <small class="text-muted">Date limite</small>
@@ -37,7 +121,7 @@
                                 </div>
                             {% endif %}
 
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between mt-auto">
                                 <a href="{{ url_for('tache_detail', tache_id=tache.id) }}"
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye"></i> Détails
@@ -65,3 +149,57 @@
         </div>
     {% endif %}
 </div>
+
+<!-- Script pour le diagramme circulaire -->
+{% if total_taches > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('tasksChart').getContext('2d');
+
+    const data = {
+        labels: ['Terminées', 'En cours'],
+        datasets: [{
+            data: [{{ taches_terminees }}, {{ total_taches - taches_terminees }}],
+            backgroundColor: [
+                '#28a745', // Vert pour terminées
+                '#ffc107'  // Jaune pour en cours
+            ],
+            borderColor: [
+                '#1e7e34',
+                '#e0a800'
+            ],
+            borderWidth: 2
+        }]
+    };
+
+    const config = {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    };
+
+    new Chart(ctx, config);
+});
+</script>
+{% endif %}
