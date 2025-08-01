@@ -5,132 +5,126 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-def setup_database():
-    # Récupération de l'URL de la base de données depuis les variables d'environnement
-    database_url = os.environ.get('DATABASE_URL')
-
-    if not database_url:
-        print("❌ ERREUR : Variable d'environnement DATABASE_URL non définie")
-        print("💡 Assurez-vous que DATABASE_URL est configurée dans vos variables d'environnement")
+def init_database():
+    """Initialise la base de données PostgreSQL avec toutes les tables nécessaires"""
+    
+    # Récupérer l'URL de la base de données depuis les variables d'environnement
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    
+    if not DATABASE_URL:
+        print("⚠️  DATABASE_URL non définie, utilisation de SQLite")
         return False
-
+    
     try:
-        # Connexion à la base de données PostgreSQL
-        conn = psycopg2.connect(database_url)
-        cursor = conn.cursor()
-
-        print("✅ Connexion à PostgreSQL réussie")
-
-        # Création de la table users
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(80) UNIQUE NOT NULL,
-                password VARCHAR(120) NOT NULL,
-                security_question TEXT NOT NULL,
-                security_answer VARCHAR(120) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        print("✅ Table 'users' créée/vérifiée")
-
-        # Création de la table objectifs
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS objectifs (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                nom VARCHAR(200) NOT NULL,
-                montant_objectif DECIMAL(10,2) NOT NULL,
-                montant_actuel DECIMAL(10,2) DEFAULT 0,
-                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                archive BOOLEAN DEFAULT FALSE,
-                description TEXT
-            )
-        """)
-        print("✅ Table 'objectifs' créée/vérifiée")
-
-        # Création de la table transactions
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS transactions (
-                id SERIAL PRIMARY KEY,
-                objectif_id INTEGER NOT NULL REFERENCES objectifs(id) ON DELETE CASCADE,
-                montant DECIMAL(10,2) NOT NULL,
-                date_transaction TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                description TEXT
-            )
-        """)
-        print("✅ Table 'transactions' créée/vérifiée")
-
-        # Création de la table tâches
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS taches (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                titre VARCHAR(200) NOT NULL,
-                description TEXT,
-                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                termine BOOLEAN DEFAULT FALSE,
-                ordre INTEGER DEFAULT 0
-            )
-        """)
-        print("✅ Table 'taches' créée/vérifiée")
-
-        # Création de la table étapes
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS etapes (
-                id SERIAL PRIMARY KEY,
-                tache_id INTEGER NOT NULL REFERENCES taches(id) ON DELETE CASCADE,
-                description VARCHAR(500) NOT NULL,
-                terminee BOOLEAN DEFAULT FALSE,
-                ordre INTEGER NOT NULL,
-                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        print("✅ Table 'etapes' créée/vérifiée")
-
-        # Validation des changements
+        print("🔗 Connexion à la base de données PostgreSQL...")
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        
+        print("🗑️  Suppression des anciennes tables (si elles existent)...")
+        cur.execute("DROP TABLE IF EXISTS transactions CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS taches CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS etapes CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS evenements CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS objectifs CASCADE;")
+        cur.execute("DROP TABLE IF EXISTS users CASCADE;")
+        
+        print("🏗️  Création de la structure des tables...")
+        
+        # Table users
+        cur.execute('''
+        CREATE TABLE users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            security_question TEXT,
+            security_answer TEXT,
+            default_currency TEXT DEFAULT 'XAF',
+            countdown_enabled BOOLEAN DEFAULT true,
+            countdown_days INTEGER DEFAULT 30,
+            display_currency BOOLEAN DEFAULT true,
+            display_progress BOOLEAN DEFAULT true,
+            notification_enabled BOOLEAN DEFAULT true,
+            auto_delete_completed BOOLEAN DEFAULT false,
+            auto_delete_days INTEGER DEFAULT 90
+        );
+        ''')
+        
+        # Table objectifs
+        cur.execute('''
+        CREATE TABLE objectifs (
+            id SERIAL PRIMARY KEY,
+            nom TEXT NOT NULL,
+            montant_cible REAL NOT NULL,
+            montant_actuel REAL NOT NULL DEFAULT 0,
+            date_limite TEXT,
+            status TEXT NOT NULL DEFAULT 'actif',
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+        );
+        ''')
+        
+        # Table transactions
+        cur.execute('''
+        CREATE TABLE transactions (
+            id SERIAL PRIMARY KEY,
+            objectif_id INTEGER NOT NULL REFERENCES objectifs(id) ON DELETE CASCADE,
+            montant REAL NOT NULL,
+            type_transaction TEXT NOT NULL,
+            date TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+        );
+        ''')
+        
+        # Table taches
+        cur.execute('''
+        CREATE TABLE taches (
+            id SERIAL PRIMARY KEY,
+            titre TEXT NOT NULL,
+            description TEXT,
+            priorite TEXT DEFAULT 'normale',
+            statut TEXT DEFAULT 'en_cours',
+            date_creation TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
+            date_limite TEXT,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+        );
+        ''')
+        
+        # Table etapes
+        cur.execute('''
+        CREATE TABLE etapes (
+            id SERIAL PRIMARY KEY,
+            tache_id INTEGER NOT NULL REFERENCES taches(id) ON DELETE CASCADE,
+            description TEXT NOT NULL,
+            terminee BOOLEAN DEFAULT false,
+            ordre INTEGER DEFAULT 0
+        );
+        ''')
+        
+        # Table evenements
+        cur.execute('''
+        CREATE TABLE evenements (
+            id SERIAL PRIMARY KEY,
+            titre TEXT NOT NULL,
+            description TEXT,
+            date_debut TEXT NOT NULL,
+            date_fin TEXT,
+            couleur TEXT DEFAULT '#007bff',
+            rappel_minutes INTEGER DEFAULT 0,
+            rappel TEXT,
+            date_creation TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() at time zone 'utc'),
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+        );
+        ''')
+        
+        print("✅ Structure des tables créée avec succès.")
         conn.commit()
-        print("✅ Toutes les tables ont été créées avec succès !")
-
-        # Test de connexion et affichage des informations
-        cursor.execute("SELECT version();")
-        version = cursor.fetchone()
-        print(f"📊 Version PostgreSQL : {version[0]}")
-
-        cursor.execute("SELECT COUNT(*) FROM users;")
-        nb_users = cursor.fetchone()[0]
-        print(f"👥 Nombre d'utilisateurs : {nb_users}")
-
-        cursor.execute("SELECT COUNT(*) FROM objectifs;")
-        nb_objectifs = cursor.fetchone()[0]
-        print(f"💰 Nombre d'objectifs : {nb_objectifs}")
-
-        cursor.execute("SELECT COUNT(*) FROM taches;")
-        nb_taches = cursor.fetchone()[0]
-        print(f"📝 Nombre de tâches : {nb_taches}")
-
-        cursor.close()
+        cur.close()
         conn.close()
-
-        print("\n🎉 Configuration PostgreSQL terminée avec succès !")
-        print("🚀 Votre application est prête à être utilisée.")
-
+        print("🔒 Connexion fermée.")
         return True
-
+        
     except Exception as e:
-        print(f"❌ ERREUR lors de la configuration : {e}")
+        print(f"❌ Erreur lors de l'initialisation de la base de données: {e}")
         return False
 
 if __name__ == "__main__":
-    print("🔧 Configuration de la base de données PostgreSQL...")
-    success = setup_database()
-
-    if success:
-        print("\n✅ Configuration terminée avec succès !")
-        print("💡 Vous pouvez maintenant lancer votre application avec : python app.py")
-    else:
-        print("\n❌ Échec de la configuration")
-        print("💡 Vérifiez vos paramètres de connexion PostgreSQL")
+    init_database()
