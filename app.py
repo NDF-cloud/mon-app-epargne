@@ -1177,7 +1177,7 @@ def sauvegarder_tache(tache_id):
 
         conn.commit()
         flash("Tâche sauvegardée avec succès !", "success")
-        return redirect(url_for('taches'))
+        return redirect(url_for('app_with_tabs'))
 
     except Exception as e:
         conn.rollback()
@@ -1260,7 +1260,7 @@ def supprimer_tache(tache_id):
     finally:
         cur.close()
         conn.close()
-    return redirect(url_for('taches'))
+    return redirect(url_for('app_with_tabs'))
 
 @app.route('/tache/<int:tache_id>/detail')
 @login_required
@@ -1277,7 +1277,7 @@ def tache_detail(tache_id):
 
         if not tache_raw:
             flash("Tâche non trouvée.", "error")
-            return redirect(url_for('taches'))
+            return redirect(url_for('app_with_tabs'))
 
         tache = convert_tache_to_dict(tache_raw, is_postgres)
 
@@ -2152,6 +2152,16 @@ def tab_content(tab_name):
         return "Onglet non trouvé", 404
 
 # --- Point de démarrage ---
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('error.html', error="Une erreur interne s'est produite. Veuillez réessayer."), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error.html', error="Page non trouvée."), 404
+
+
 if __name__ == '__main__':
     # Initialiser la base de données PostgreSQL si nécessaire
     if os.environ.get('DATABASE_URL'):
