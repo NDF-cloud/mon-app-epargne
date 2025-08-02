@@ -1415,11 +1415,14 @@ def convert_evenement_to_dict(row, is_postgres=False):
     if is_postgres:
         return dict(row)
     else:
+        # Schéma SQLite : id, titre, description, date_debut, date_fin, lieu, type_evenement, rappel_minutes, termine, user_id, date_creation, heure_debut, heure_fin, couleur
         return {
-            'id': row[0], 'user_id': row[1], 'titre': row[2], 'description': row[3],
-            'date_debut': row[4], 'date_fin': row[5], 'heure_debut': row[6], 'heure_fin': row[7],
-            'lieu': row[8], 'couleur': row[9], 'rappel_minutes': row[10], 'termine': row[11],
-            'date_creation': row[12]
+            'id': row[0], 'titre': row[1], 'description': row[2], 'date_debut': row[3], 
+            'date_fin': row[4], 'lieu': row[5], 'type_evenement': row[6], 'rappel_minutes': row[7], 
+            'termine': row[8], 'user_id': row[9], 'date_creation': row[10],
+            'heure_debut': row[11] if len(row) > 11 else None,
+            'heure_fin': row[12] if len(row) > 12 else None,
+            'couleur': row[13] if len(row) > 13 else '#007bff'
         }
 
 
