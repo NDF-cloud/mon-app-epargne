@@ -39,8 +39,10 @@ def init_database():
             );
         """)
 
-        if cur.fetchone()[0]:
-            print("✅ Tables déjà existantes, initialisation ignorée")
+        tables_exist = cur.fetchone()[0]
+        
+        if tables_exist:
+            print("✅ Tables déjà existantes")
             cur.close()
             conn.close()
             return True
@@ -2168,6 +2170,7 @@ def not_found_error(error):
 if __name__ == '__main__':
     # Initialiser la base de données PostgreSQL si nécessaire
     if os.environ.get('DATABASE_URL'):
+        print("🔧 Initialisation de la base de données PostgreSQL...")
         init_database()
     elif not os.path.exists('epargne.db'):
         print("Base de données SQLite non trouvée, création...")
